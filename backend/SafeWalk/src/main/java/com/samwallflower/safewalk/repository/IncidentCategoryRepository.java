@@ -9,4 +9,7 @@ import java.util.Optional;
 @Repository
 public interface IncidentCategoryRepository extends JpaRepository<IncidentCategory, Long> {
     Optional<IncidentCategory> findByName(String name);
+    boolean existsByName(String name);
+
+    Optional<IncidentCategory> findBySeverityWeight(Integer severityWeight);
 }
