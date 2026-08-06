@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface IncidentReportRepository extends JpaRepository<IncidentReport, Long> {
@@ -57,5 +58,8 @@ public interface IncidentReportRepository extends JpaRepository<IncidentReport, 
     );
 
     Page<IncidentReport> findByCategoryId(Long categoryId, Pageable pageable);
+
+    //Finds the most recent report by user
+    Optional<IncidentReport> findTopByUserIdOrderByTimestampDesc(Long userId);
 
 }

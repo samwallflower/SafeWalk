@@ -3,6 +3,7 @@ package com.samwallflower.safewalk.service.incidentreport;
 import com.samwallflower.safewalk.dto.HeatMapPointDto;
 import com.samwallflower.safewalk.dto.IncidentReportDto;
 import com.samwallflower.safewalk.enums.ReportStatus;
+import com.samwallflower.safewalk.exception.RateLimitExceedeedException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
 import com.samwallflower.safewalk.model.IncidentCategory;
 import com.samwallflower.safewalk.model.IncidentReport;
@@ -21,6 +22,8 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 
+import static java.time.temporal.ChronoUnit.MINUTES;
+
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +40,15 @@ public class IncidentReportService implements IIncidentReportService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        incidentReportRepository.findTopByUserIdOrderByTimestampDesc(userId)
+                .ifPresent(lastReport -> {
+                    long minutesSinceLastReport = MINUTES.between(lastReport.getTimestamp(), LocalDateTime.now());
+                    if (minutesSinceLastReport < 5) {
+                        long minutesToWait = 5 - minutesSinceLastReport;
+                        throw new RateLimitExceedeedException("Rate limit exceeded. Please wait " + minutesToWait + " more minutes before submitting another report.");
+                    }
+                });
 
         IncidentReport newReport = createIncidentReport(request, category);
         newReport.setUser(user);
@@ -248,4 +260,6 @@ public class IncidentReportService implements IIncidentReportService {
             throw new IllegalArgumentException("Invalid date/time format: " + dateTime);
         }
     }
+
+
 }

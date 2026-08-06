@@ -29,4 +29,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> handleUnexpectedException(Exception e) {
         return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse( e.getMessage(), null));
     }
+
+    @ExceptionHandler(RateLimitExceedeedException.class)
+    public ResponseEntity<ApiResponse> handleRateLimitExceededException(RateLimitExceedeedException e) {
+        return ResponseEntity.status(TOO_MANY_REQUESTS).body(new ApiResponse(e.getMessage(), null));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse> handleInvalidInputException(IllegalArgumentException e) {
+        return ResponseEntity.status(BAD_REQUEST).body(new ApiResponse(e.getMessage(), null));
+    }
 }
