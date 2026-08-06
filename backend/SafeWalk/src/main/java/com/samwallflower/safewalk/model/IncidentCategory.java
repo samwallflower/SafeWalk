@@ -23,4 +23,12 @@ public class IncidentCategory {
 
     private String description;
 
+    public IncidentCategory(String name) {
+        this.name = name;
+    }
+
+    public IncidentCategory(String name, Integer severityWeight) {
+        this.name = name;
+        this.severityWeight = severityWeight;
+    }
 }

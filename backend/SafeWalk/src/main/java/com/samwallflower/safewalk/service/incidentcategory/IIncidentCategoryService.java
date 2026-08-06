@@ -13,7 +13,7 @@ public interface IIncidentCategoryService {
 
     IncidentCategoryDto getIncidentCategoryById(Long id);
     IncidentCategoryDto getIncidentCategoryByName(String name);
-    IncidentCategoryDto getIncidentCategoryBySeverity(Integer severity);
+    List<IncidentCategoryDto> getIncidentCategoryBySeverity(Integer severity);
     // only admin should be able to create delete update categories
     IncidentCategoryDto addIncidentCategory(AddIncidentCategoryRequest categoryRequest);
     IncidentCategoryDto updateIncidentCategory(Long categoryId, UpdateIncidentCategoryRequest categoryRequest);

@@ -55,7 +55,7 @@ public class IncidentCategoryController {
 
     @GetMapping("/by-severity-weight/category")
     public ResponseEntity<ApiResponse> getIncidentCategoryBySeverity(@RequestParam Integer severity) {
-        IncidentCategoryDto incidentCategory = incidentCategoryService.getIncidentCategoryBySeverity(severity);
-        return ResponseEntity.ok(new ApiResponse("Incident category retrieved successfully", incidentCategory));
+        List<IncidentCategoryDto> incidentCategories = incidentCategoryService.getIncidentCategoryBySeverity(severity);
+        return ResponseEntity.ok(new ApiResponse("Incident categories retrieved successfully", incidentCategories));
     }
 }

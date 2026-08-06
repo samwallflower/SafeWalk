@@ -36,16 +36,16 @@ public class IncidentCategoryService implements IIncidentCategoryService{
     @Override
     public IncidentCategoryDto getIncidentCategoryByName(String name) {
 
-        return incidentCategoryRepository.findByName(name)
+        return incidentCategoryRepository.findByNameIgnoreCase(name)
                 .map(this::convertToDto)
                 .orElseThrow(()-> new ResourceNotFoundException("Incident Category not found with name: " + name));
     }
 
     @Override
-    public IncidentCategoryDto getIncidentCategoryBySeverity(Integer severity) {
-        return incidentCategoryRepository.findBySeverityWeight(severity)
+    public List<IncidentCategoryDto> getIncidentCategoryBySeverity(Integer severity) {
+        return incidentCategoryRepository.findAllBySeverityWeight(severity).stream()
                 .map(this::convertToDto)
-                .orElseThrow(()-> new ResourceNotFoundException("Incident Category not found with severity: " + severity));
+                .toList();
     }
 
     @Override
