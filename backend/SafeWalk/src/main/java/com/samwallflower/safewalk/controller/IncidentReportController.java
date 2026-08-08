@@ -122,7 +122,14 @@ public class IncidentReportController {
 
     @DeleteMapping("/{userId}/report/{id}/delete")
     public ResponseEntity<ApiResponse> deleteIncidentReport(@PathVariable Long id, @PathVariable Long userId) {
-        incidentReportService.deleteIncidentReport(id, userId);
+        incidentReportService.deleteIncidentReportById(id, userId);
+        return ResponseEntity.ok(new ApiResponse("Incident report deleted successfully", null));
+    }
+
+    // for admin only
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<ApiResponse> deleteIncidentReportById(@PathVariable Long id) {
+        incidentReportService.deleteIncidentReportById(id);
         return ResponseEntity.ok(new ApiResponse("Incident report deleted successfully", null));
     }
 

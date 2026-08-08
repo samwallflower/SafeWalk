@@ -11,7 +11,9 @@ import java.util.List;
 public interface IIncidentReportService {
     IncidentReportDto addIncidentReport(AddIncidentReportRequest request, Long userId);
     IncidentReportDto updateIncidentReport(UpdateIncidentReportRequest request, Long userId, Long id);
-    void deleteIncidentReport(Long id, Long userId);
+    void deleteIncidentReportById(Long id, Long userId);
+
+    void deleteIncidentReportById(Long id);
 
     List<IncidentReportDto> getAllIncidentReports();
     IncidentReportDto getIncidentReportById(Long id);

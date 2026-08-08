@@ -23,6 +23,7 @@ public interface IncidentReportRepository extends JpaRepository<IncidentReport, 
     List<IncidentReport> findByUserIdAndStatus(Long userId, ReportStatus status);
     List<IncidentReport> findByCategoryIdAndStatus(Long categoryId, ReportStatus status);
 
+
     List<IncidentReport> findIncidentReportByDownvotes(Integer downvotes);
     List<IncidentReport> findIncidentReportByUpvotes(Integer upvotes);
     List<IncidentReport> findIncidentReportByIsAnonymous(Boolean isAnonymous);

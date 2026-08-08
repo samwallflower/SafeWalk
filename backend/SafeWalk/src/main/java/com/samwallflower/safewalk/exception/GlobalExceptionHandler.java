@@ -30,8 +30,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse( e.getMessage(), null));
     }
 
-    @ExceptionHandler(RateLimitExceedeedException.class)
-    public ResponseEntity<ApiResponse> handleRateLimitExceededException(RateLimitExceedeedException e) {
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ApiResponse> handleRateLimitExceededException(RateLimitExceededException e) {
         return ResponseEntity.status(TOO_MANY_REQUESTS).body(new ApiResponse(e.getMessage(), null));
     }
 

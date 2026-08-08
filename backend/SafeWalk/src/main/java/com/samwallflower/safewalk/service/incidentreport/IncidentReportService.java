@@ -3,13 +3,15 @@ package com.samwallflower.safewalk.service.incidentreport;
 import com.samwallflower.safewalk.dto.HeatMapPointDto;
 import com.samwallflower.safewalk.dto.IncidentReportDto;
 import com.samwallflower.safewalk.enums.ReportStatus;
-import com.samwallflower.safewalk.exception.RateLimitExceedeedException;
+import com.samwallflower.safewalk.exception.RateLimitExceededException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
+import com.samwallflower.safewalk.exception.ResourceProcessingException;
 import com.samwallflower.safewalk.model.IncidentCategory;
 import com.samwallflower.safewalk.model.IncidentReport;
 import com.samwallflower.safewalk.model.User;
 import com.samwallflower.safewalk.repository.IncidentCategoryRepository;
 import com.samwallflower.safewalk.repository.IncidentReportRepository;
+import com.samwallflower.safewalk.repository.IncidentVoteRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.request.incidentreport.AddIncidentReportRequest;
 import com.samwallflower.safewalk.request.incidentreport.UpdateIncidentReportRequest;
@@ -30,6 +32,7 @@ import static java.time.temporal.ChronoUnit.MINUTES;
 public class IncidentReportService implements IIncidentReportService {
     private final IncidentReportRepository incidentReportRepository;
     private final IncidentCategoryRepository categoryRepository;
+    private final IncidentVoteRepository incidentVoteRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
@@ -46,7 +49,7 @@ public class IncidentReportService implements IIncidentReportService {
                     long minutesSinceLastReport = MINUTES.between(lastReport.getTimestamp(), LocalDateTime.now());
                     if (minutesSinceLastReport < 5) {
                         long minutesToWait = 5 - minutesSinceLastReport;
-                        throw new RateLimitExceedeedException("Rate limit exceeded. Please wait " + minutesToWait + " more minutes before submitting another report.");
+                        throw new RateLimitExceededException("Rate limit exceeded. Please wait " + minutesToWait + " more minutes before submitting another report.");
                     }
                 });
 
@@ -73,7 +76,7 @@ public class IncidentReportService implements IIncidentReportService {
         return incidentReportRepository.findById(id)
                 .map(incidentReport -> {
                     if (!incidentReport.getUser().getId().equals(userId)) {
-                        throw new IllegalArgumentException("User is not authorized to update this incident report");
+                        throw new ResourceProcessingException("You are not authorized to update this incident report");
                     }
                     Optional.ofNullable(request.getDescription()).ifPresent(incidentReport::setDescription);
                     Optional.ofNullable(request.getLatitude()).ifPresent(incidentReport::setLatitude);
@@ -91,13 +94,21 @@ public class IncidentReportService implements IIncidentReportService {
     }
 
     @Override
-    public void deleteIncidentReport(Long id, Long userId) {
+    public void deleteIncidentReportById(Long id, Long userId) {
         incidentReportRepository.delete(incidentReportRepository.findById(id)
                 .map(r -> {
                     if (!r.getUser().getId().equals(userId))
-                        throw new IllegalArgumentException("User is not authorized to delete this incident report");
+                        throw new ResourceProcessingException("You are not authorized to delete this incident report");
                     return r;
                 })
+                .orElseThrow(() -> new ResourceNotFoundException("Incident report not found with id: " + id))
+        );
+    }
+
+
+    @Override
+    public void deleteIncidentReportById(Long id) {
+        incidentReportRepository.delete(incidentReportRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Incident report not found with id: " + id))
         );
     }

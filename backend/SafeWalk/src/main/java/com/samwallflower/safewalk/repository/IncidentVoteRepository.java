@@ -19,4 +19,9 @@ public interface IncidentVoteRepository extends JpaRepository<IncidentVote, Long
     List<IncidentVote> findByReportIdAndVoteType(Long reportId, VoteType voteType);
     // a way to count all the upvotes or downvotes for a report
     long countByReportIdAndVoteType(Long reportId, VoteType voteType);
+
+    // a method to check if the user voted for a particular report
+    boolean existsByReportIdAndUserId(Long reportId, Long userId);
+
+    void deleteByReportId(Long reportId);
 }

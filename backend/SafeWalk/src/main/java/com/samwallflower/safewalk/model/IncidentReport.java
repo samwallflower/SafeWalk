@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Setter
 @Getter
@@ -36,6 +38,9 @@ public class IncidentReport {
 
     @Enumerated(EnumType.STRING)
     private ReportStatus status = ReportStatus.ACTIVE; // ACTIVE, HIDDEN, UNDER_REVIEW
+
+    @OneToMany(mappedBy = "report", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<IncidentVote> votes = new ArrayList<>();
 
     @PrePersist
     protected void onCreate(){
