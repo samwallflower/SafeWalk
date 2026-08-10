@@ -56,4 +56,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EmergencyContact> emergencyContacts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<WalkSession> walkSessions = new ArrayList<>();
 }

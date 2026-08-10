@@ -24,6 +24,7 @@ public class IncidentVoteService implements IIncidentVoteService {
     private final IncidentVoteRepository incidentVoteRepository;
     private final UserRepository userRepository;
     private final IncidentReportRepository incidentReportRepository;
+    private final Integer DOWNVOTE_THRESHOLD = 5;
 
     // Users should not be able to cast vote on their own reports
     // after the vote has been cast we must also update the upvote and downvote number on the incident report
@@ -56,7 +57,7 @@ public class IncidentVoteService implements IIncidentVoteService {
             incidentReport.setUpvotes(incidentReport.getUpvotes() + 1);
         } else {
             incidentReport.setDownvotes(incidentReport.getDownvotes() + 1);
-            if(incidentReport.getDownvotes()>5)
+            if(incidentReport.getDownvotes()>DOWNVOTE_THRESHOLD)
                 incidentReport.setStatus(ReportStatus.HIDDEN);
         }
 
@@ -78,7 +79,7 @@ public class IncidentVoteService implements IIncidentVoteService {
             report.setUpvotes(Math.max(0, report.getUpvotes() - 1));
         } else {
             report.setDownvotes(Math.max(0, report.getDownvotes() - 1));
-            if(report.getStatus() == ReportStatus.HIDDEN && report.getDownvotes() <= 5) {
+            if(report.getStatus() == ReportStatus.HIDDEN && report.getDownvotes() <= DOWNVOTE_THRESHOLD) {
                 report.setStatus(ReportStatus.ACTIVE); // or whatever the default status is
             }
         }
@@ -162,7 +163,7 @@ public class IncidentVoteService implements IIncidentVoteService {
             report.setUpvotes(Math.max(0, report.getUpvotes() - 1));
         } else {
             report.setDownvotes(Math.max(0, report.getDownvotes() - 1));
-            if(report.getStatus() == ReportStatus.HIDDEN && report.getDownvotes() <= 5) {
+            if(report.getStatus() == ReportStatus.HIDDEN && report.getDownvotes() <= DOWNVOTE_THRESHOLD) {
                 report.setStatus(ReportStatus.ACTIVE); // or whatever the default status is
             }
         }
@@ -190,13 +191,13 @@ public class IncidentVoteService implements IIncidentVoteService {
         if (vote == VoteType.UPVOTE) {
             report.setUpvotes(Math.max(0, report.getUpvotes() + 1));
             report.setDownvotes(Math.max(0, report.getDownvotes() - 1));
-            if(report.getStatus() == ReportStatus.HIDDEN && report.getDownvotes() <= 5) {
+            if(report.getStatus() == ReportStatus.HIDDEN && report.getDownvotes() <= DOWNVOTE_THRESHOLD) {
                 report.setStatus(ReportStatus.ACTIVE); // or whatever the default status is
             }
         }else{
             report.setDownvotes(Math.max(0, report.getDownvotes() + 1));
             report.setUpvotes(Math.max(0, report.getUpvotes() - 1));
-            if (report.getDownvotes() > 5) {
+            if (report.getDownvotes() > DOWNVOTE_THRESHOLD) {
                 report.setStatus(ReportStatus.HIDDEN);
             }
         }
