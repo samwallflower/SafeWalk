@@ -57,12 +57,13 @@ public class WalkSession {
         this.destinationLongitude = destinationLongitude;
     }
 
-    public WalkSession(Double originLatitude, Double originLongitude, Double destinationLatitude, Double destinationLongitude, String chosenRoutePolyline) {
+
+    public WalkSession(Double originLatitude, Double originLongitude, Double destinationLatitude, Double destinationLongitude, Route route) {
         this.originLatitude = originLatitude;
         this.originLongitude = originLongitude;
         this.destinationLatitude = destinationLatitude;
         this.destinationLongitude = destinationLongitude;
-        this.chosenRoutePolyline = chosenRoutePolyline;
+        this.route = route;
     }
 
     @PrePersist
