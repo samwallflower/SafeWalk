@@ -5,6 +5,7 @@ import com.samwallflower.safewalk.request.incidentcategory.AddIncidentCategoryRe
 import com.samwallflower.safewalk.request.incidentcategory.UpdateIncidentCategoryRequest;
 import com.samwallflower.safewalk.response.ApiResponse;
 import com.samwallflower.safewalk.service.incidentcategory.IIncidentCategoryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,13 +37,13 @@ public class IncidentCategoryController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<ApiResponse> addIncidentCategory(@RequestBody AddIncidentCategoryRequest incidentCategoryDto) {
+    public ResponseEntity<ApiResponse> addIncidentCategory(@Valid @RequestBody AddIncidentCategoryRequest incidentCategoryDto) {
         IncidentCategoryDto createdIncidentCategory = incidentCategoryService.addIncidentCategory(incidentCategoryDto);
         return ResponseEntity.ok(new ApiResponse("Incident category added successfully", createdIncidentCategory));
     }
 
     @PutMapping("/{id}/update")
-    public ResponseEntity<ApiResponse> updateIncidentCategory(@PathVariable Long id, @RequestBody UpdateIncidentCategoryRequest incidentCategoryDto) {
+    public ResponseEntity<ApiResponse> updateIncidentCategory(@PathVariable Long id, @Valid @RequestBody UpdateIncidentCategoryRequest incidentCategoryDto) {
         IncidentCategoryDto updatedIncidentCategory = incidentCategoryService.updateIncidentCategory(id, incidentCategoryDto);
         return ResponseEntity.ok(new ApiResponse("Incident category updated successfully", updatedIncidentCategory));
     }

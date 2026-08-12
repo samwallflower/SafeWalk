@@ -5,6 +5,7 @@ import com.samwallflower.safewalk.request.emergencycontact.AddEmergencyContactRe
 import com.samwallflower.safewalk.request.emergencycontact.UpdateEmergencyContactRequest;
 import com.samwallflower.safewalk.response.ApiResponse;
 import com.samwallflower.safewalk.service.emergencycontact.IEmergencyContactService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,13 +37,13 @@ public class EmergencyContactController {
     }
 
     @PostMapping("/{userId}/add")
-    public ResponseEntity<ApiResponse> addEmergencyContact(@PathVariable Long userId, @RequestBody AddEmergencyContactRequest request) {
+    public ResponseEntity<ApiResponse> addEmergencyContact(@PathVariable Long userId, @Valid @RequestBody AddEmergencyContactRequest request) {
         EmergencyContactDto contact = emergencyContactService.addEmergencyContact(userId, request);
         return ResponseEntity.ok(new ApiResponse("Emergency contact added successfully", contact));
     }
 
     @PutMapping("/{userId}/contacts/{contactId}/update")
-    public ResponseEntity<ApiResponse> updateEmergencyContact(@PathVariable Long userId, @PathVariable Long contactId, @RequestBody UpdateEmergencyContactRequest request) {
+    public ResponseEntity<ApiResponse> updateEmergencyContact(@PathVariable Long userId, @PathVariable Long contactId,@Valid @RequestBody UpdateEmergencyContactRequest request) {
         EmergencyContactDto contact = emergencyContactService.updateEmergencyContact(userId, contactId, request);
         return ResponseEntity.ok(new ApiResponse("Emergency contact updated successfully", contact));
     }
