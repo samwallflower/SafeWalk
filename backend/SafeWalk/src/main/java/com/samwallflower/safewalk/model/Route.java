@@ -1,6 +1,7 @@
 package com.samwallflower.safewalk.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,12 +26,14 @@ public class Route {
     private Double actualDistanceMeters;
     private Double safetyPenaltyMeters;
     private Double virtualDistanceMeters;
+    @Min(value = 1) // rank cannot be less than 1
     private Integer rank; // 1 = safest/recommended , 2,3,...
     private String routeRequestId; // groups sibling routes from same / recommend call
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @PrePersist
     protected void onCreate(){
         this.createdAt = LocalDateTime.now();
     }
