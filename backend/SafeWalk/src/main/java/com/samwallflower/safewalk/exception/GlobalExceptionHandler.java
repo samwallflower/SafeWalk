@@ -2,6 +2,7 @@ package com.samwallflower.safewalk.exception;
 
 import com.samwallflower.safewalk.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -38,5 +39,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse> handleInvalidInputException(IllegalArgumentException e) {
         return ResponseEntity.status(BAD_REQUEST).body(new ApiResponse(e.getMessage(), null));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse> handleValidationException(MethodArgumentNotValidException e){
+        String errorMessage = e.getBindingResult().getFieldErrors()
+                .stream()
+                .map(error->error.getField()+": "+error.getDefaultMessage())
+                .findFirst()
+                .orElse("Validation failed");
+        return ResponseEntity.status(BAD_REQUEST).body(new ApiResponse(errorMessage, null));
     }
 }
