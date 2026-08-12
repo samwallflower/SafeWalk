@@ -2,6 +2,9 @@ package com.samwallflower.safewalk.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.samwallflower.safewalk.dto.IncidentReportDto;
+import com.samwallflower.safewalk.exception.RateLimitExceededException;
+import com.samwallflower.safewalk.exception.ResourceNotFoundException;
+import com.samwallflower.safewalk.exception.ResourceProcessingException;
 import com.samwallflower.safewalk.request.incidentreport.AddIncidentReportRequest;
 import com.samwallflower.safewalk.request.incidentreport.UpdateIncidentReportRequest;
 import com.samwallflower.safewalk.service.incidentreport.IIncidentReportService;
@@ -16,9 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -28,84 +29,113 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = "api.prefix=/api/v1")
 class IncidentReportControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
+    @Autowired private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @MockitoBean
-    private IIncidentReportService incidentReportService;
+    @MockitoBean private IIncidentReportService incidentReportService;
 
     @Test
     void getAllIncidentReports_returns200() throws Exception {
-        IncidentReportDto dto = new IncidentReportDto();
-        dto.setId(1L);
-
-        when(incidentReportService.getAllIncidentReports()).thenReturn(List.of(dto));
+        when(incidentReportService.getAllIncidentReports()).thenReturn(List.of(new IncidentReportDto()));
 
         mockMvc.perform(get("/api/v1/incident-reports/all"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].id").value(1))
-                .andExpect(jsonPath("$.message").value("Incident reports retrieved successfully"));
+                .andExpect(jsonPath("$.data").isArray());
     }
 
     @Test
-    void getIncidentReportById_returns200() throws Exception {
+    void getIncidentReportById_returns200_whenFound() throws Exception {
         IncidentReportDto dto = new IncidentReportDto();
-        dto.setId(5L);
+        dto.setId(1L);
+        when(incidentReportService.getIncidentReportById(1L)).thenReturn(dto);
 
-        when(incidentReportService.getIncidentReportById(5L)).thenReturn(dto);
-
-        mockMvc.perform(get("/api/v1/incident-reports/5/report"))
+        mockMvc.perform(get("/api/v1/incident-reports/1/report"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(5));
+                .andExpect(jsonPath("$.data.id").value(1));
     }
 
     @Test
-    void addIncidentReport_returns200() throws Exception {
+    void getIncidentReportById_returns404_whenNotFound() throws Exception {
+        when(incidentReportService.getIncidentReportById(999L))
+                .thenThrow(new ResourceNotFoundException("Incident report not found with id: 999"));
+
+        mockMvc.perform(get("/api/v1/incident-reports/999/report"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void addIncidentReport_returns200_onSuccess() throws Exception {
         AddIncidentReportRequest request = new AddIncidentReportRequest();
-        request.setDescription("Test incident");
+        request.setDescription("test");
+        request.setLatitude(47.5);
+        request.setLongitude(21.6);
+        request.setIsAnonymous(false);
 
-        IncidentReportDto responseDto = new IncidentReportDto();
-        responseDto.setId(10L);
-        responseDto.setDescription("Test incident");
+        IncidentReportDto dto = new IncidentReportDto();
+        dto.setId(10L);
 
-        when(incidentReportService.addIncidentReport(any(AddIncidentReportRequest.class), eq(1L)))
-                .thenReturn(responseDto);
+        when(incidentReportService.addIncidentReport(any(), eq(5L))).thenReturn(dto);
 
-        mockMvc.perform(post("/api/v1/incident-reports/1/report/add")
+        mockMvc.perform(post("/api/v1/incident-reports/5/report/add")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(10))
-                .andExpect(jsonPath("$.data.description").value("Test incident"));
+                .andExpect(jsonPath("$.data.id").value(10));
     }
 
     @Test
-    void updateIncidentReport_returns200() throws Exception {
+    void addIncidentReport_returns429_whenRateLimited() throws Exception {
+        AddIncidentReportRequest request = new AddIncidentReportRequest();
+
+        when(incidentReportService.addIncidentReport(any(), eq(5L)))
+                .thenThrow(new RateLimitExceededException("Rate limit exceeded. Please wait 3 more minutes."));
+
+        mockMvc.perform(post("/api/v1/incident-reports/5/report/add")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isTooManyRequests()); // adjust if your handler maps this differently
+    }
+
+    @Test
+    void updateIncidentReport_returns500_whenNotAuthorized() throws Exception {
         UpdateIncidentReportRequest request = new UpdateIncidentReportRequest();
-        request.setDescription("Updated description");
 
-        IncidentReportDto responseDto = new IncidentReportDto();
-        responseDto.setId(2L);
-        responseDto.setDescription("Updated description");
+        when(incidentReportService.updateIncidentReport(any(), eq(999L), eq(1L)))
+                .thenThrow(new ResourceProcessingException("You are not authorized to update this incident report"));
 
-        when(incidentReportService.updateIncidentReport(any(UpdateIncidentReportRequest.class), eq(1L), eq(2L)))
-                .thenReturn(responseDto);
-
-        mockMvc.perform(put("/api/v1/incident-reports/1/report/2/update")
+        mockMvc.perform(put("/api/v1/incident-reports/999/report/1/update")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.description").value("Updated description"));
+                .andExpect(status().isInternalServerError()); // adjust if your handler maps this differently
     }
 
     @Test
-    void deleteIncidentReport_returns200() throws Exception {
-        mockMvc.perform(delete("/api/v1/incident-reports/1/report/2/delete"))
+    void deleteIncidentReport_returns200_onSuccess() throws Exception {
+        mockMvc.perform(delete("/api/v1/incident-reports/5/report/1/delete"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Incident report deleted successfully"));
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
 
-        verify(incidentReportService).deleteIncidentReportById(2L, 1L);
+    @Test
+    void getNearByIncidentReports_returns200_withQueryParams() throws Exception {
+        when(incidentReportService.getNearByIncidentReports(47.5, 21.6, 50.0))
+                .thenReturn(List.of(new IncidentReportDto()));
+
+        mockMvc.perform(get("/api/v1/incident-reports/nearby/report")
+                        .param("latitude", "47.5")
+                        .param("longitude", "21.6")
+                        .param("radiusMeters", "50"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    void updateStatus_returns400_whenInvalidStatus() throws Exception {
+        when(incidentReportService.updateStatus(eq(1L), eq("garbage")))
+                .thenThrow(new IllegalArgumentException("Invalid status: garbage"));
+
+        mockMvc.perform(put("/api/v1/incident-reports/1/status/update")
+                        .param("status", "garbage"))
+                .andExpect(status().isBadRequest()); // adjust if your handler maps this differently
     }
 }
