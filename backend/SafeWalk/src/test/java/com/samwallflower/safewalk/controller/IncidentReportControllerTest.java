@@ -93,7 +93,7 @@ class IncidentReportControllerTest {
         mockMvc.perform(post("/api/v1/incident-reports/5/report/add")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isTooManyRequests()); // adjust if your handler maps this differently
+                .andExpect(status().isTooManyRequests());
     }
 
     @Test
@@ -106,7 +106,7 @@ class IncidentReportControllerTest {
         mockMvc.perform(put("/api/v1/incident-reports/999/report/1/update")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isInternalServerError()); // adjust if your handler maps this differently
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -136,6 +136,6 @@ class IncidentReportControllerTest {
 
         mockMvc.perform(put("/api/v1/incident-reports/1/status/update")
                         .param("status", "garbage"))
-                .andExpect(status().isBadRequest()); // adjust if your handler maps this differently
+                .andExpect(status().isBadRequest());
     }
 }
