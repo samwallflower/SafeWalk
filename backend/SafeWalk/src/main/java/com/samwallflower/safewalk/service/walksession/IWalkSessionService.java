@@ -1,6 +1,7 @@
 package com.samwallflower.safewalk.service.walksession;
 
 import com.samwallflower.safewalk.dto.WalkSessionDto;
+import com.samwallflower.safewalk.model.WalkSession;
 import com.samwallflower.safewalk.request.walksession.AddWalkSessionRequest;
 import com.samwallflower.safewalk.request.walksession.UpdateWalkSession;
 
@@ -16,5 +17,10 @@ public interface IWalkSessionService {
     List<WalkSessionDto> getWalkSessionsByUserId(Long userId);
     List<WalkSessionDto> getAllWalkSession();
     List<WalkSessionDto> getWalkSessionByStatus(String status);
+    List<WalkSessionDto> getWalkSessionByRouteId(Long routeId);
+    void deleteWalkSessionById(Long id, Long userId);
+    WalkSessionDto updateWalkSessionStatus(Long id, String status);
 
+    WalkSessionDto getWalkSessionByRouteIdAndUserId(Long routeId, Long userId);
+    WalkSessionDto convertToDto(WalkSession walkSession);
 }

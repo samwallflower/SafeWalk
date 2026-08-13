@@ -257,11 +257,12 @@ public class IncidentReportService implements IIncidentReportService {
     }
 
     private ReportStatus resolveStatus(String status) {
-        try {
-            return ReportStatus.valueOf(status.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid status: " + status);
-        }
+        return switch (status.toLowerCase().trim()){
+            case "active" -> ReportStatus.ACTIVE;
+            case "hidden" -> ReportStatus.HIDDEN;
+            case "under_review" -> ReportStatus.UNDER_REVIEW;
+            default -> throw new IllegalArgumentException("Invalid report status " + status);
+        };
     }
 
     private LocalDateTime parseDateTime(String dateTime) {
