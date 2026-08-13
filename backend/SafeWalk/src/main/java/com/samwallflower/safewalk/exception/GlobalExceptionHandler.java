@@ -1,6 +1,7 @@
 package com.samwallflower.safewalk.exception;
 
 import com.samwallflower.safewalk.response.ApiResponse;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -47,6 +48,16 @@ public class GlobalExceptionHandler {
                 .stream()
                 .map(error->error.getField()+": "+error.getDefaultMessage())
                 .findFirst()
+                .orElse("Validation failed");
+        return ResponseEntity.status(BAD_REQUEST).body(new ApiResponse(errorMessage, null));
+    }
+
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse> handleConstraintViolationException(ConstraintViolationException e) {
+        String errorMessage = e.getConstraintViolations().stream()
+                .findFirst()
+                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .orElse("Validation failed");
         return ResponseEntity.status(BAD_REQUEST).body(new ApiResponse(errorMessage, null));
     }
