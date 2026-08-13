@@ -2,8 +2,7 @@
 
 <!-- BADGES GO HERE -->
 [![codecov](https://codecov.io/github/samwallflower/SafeWalk/graph/badge.svg?token=QA6NHJVQXR)](https://codecov.io/github/samwallflower/SafeWalk)
-<!-- Paste your SonarCloud Quality Gate and Coverage badges here after the next push! -->
-
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=samwallflower_SafeWalk&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=samwallflower_SafeWalk)
 ## 🛡️ About The Project
 SafeWalk is a secure routing and incident reporting API designed to provide safe navigation recommendations and track localized incidents. 
 
