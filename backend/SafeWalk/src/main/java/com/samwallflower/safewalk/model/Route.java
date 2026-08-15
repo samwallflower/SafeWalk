@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -40,7 +41,7 @@ public class Route {
 
     // here if a walk session is deleted it's related route will also be deleted
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<WalkSession> walkSessions;
+    private List<WalkSession> walkSessions = new ArrayList<>();
 
     public Route(String polyline) {
         this.polyline = polyline;
