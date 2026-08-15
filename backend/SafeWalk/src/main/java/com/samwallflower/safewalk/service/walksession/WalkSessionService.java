@@ -2,6 +2,7 @@ package com.samwallflower.safewalk.service.walksession;
 
 import com.samwallflower.safewalk.dto.WalkSessionDto;
 import com.samwallflower.safewalk.enums.SessionStatus;
+import com.samwallflower.safewalk.exception.RateLimitExceededException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
 import com.samwallflower.safewalk.exception.ResourceProcessingException;
 import com.samwallflower.safewalk.model.Route;
@@ -34,12 +35,19 @@ public class WalkSessionService implements IWalkSessionService {
     // then we set that saved object into our user and route object's walk session list
     // finally we save the user and route objects in their repositories
     // and return the dto
-
+    //if someone already has active sessions they cannot start new sessions before ending the old ones
     @Override
     @Transactional
     public WalkSessionDto startWalkSessionDto(Long userId, AddWalkSessionRequest request) {
         User user = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User not found with id: " + userId));
         Route route = routeRepository.findById(request.getChosenRouteId()).orElseThrow(()-> new ResourceNotFoundException("Route not found with id: " + request.getChosenRouteId()));
+
+        walkSessionRepository.findTopByUserIdOrderByStartTimeDesc(userId)
+                .ifPresent(session->{
+                    if (session.getStatus()!=SessionStatus.COMPLETED){
+                        throw new RateLimitExceededException("Please complete previous session with id: " + session.getId()+" before starting a new session");
+                    }
+                });
 
         WalkSession walkSession = createWalkSession(user, route, request);
         WalkSession saved = walkSessionRepository.save(walkSession);
@@ -72,11 +80,15 @@ public class WalkSessionService implements IWalkSessionService {
         return walkSession;
     }
 
+    // we don't allow anyone update anything after a session is complete
     @Override
     @Transactional
     public WalkSessionDto updateLocation(Long id, Long userId, UpdateWalkSession request) {
         User user = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User not found with id: " + userId));
         WalkSession walkSession = walkSessionRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id: " + id));
+
+        if(walkSession.getStatus()==SessionStatus.COMPLETED)
+            throw new ResourceProcessingException("WalkSession already completed with id: " + id);
 
         if(!walkSession.getUser().getId().equals(user.getId())) {
             throw new ResourceProcessingException("Walk Session with id: "+ id + "does not belong to user with id: "+ userId);
@@ -101,14 +113,19 @@ public class WalkSessionService implements IWalkSessionService {
     public WalkSessionDto endSessionById(Long id) {
         return walkSessionRepository.findById(id)
                 .map(walkSession -> {
-                    if (walkSession.getStatus().equals(SessionStatus.COMPLETED)) {
-                        throw new  ResourceProcessingException("WalkSession has already ended");
-                    }
-                    walkSession.setEndTime(LocalDateTime.now());
-                    walkSession.setStatus(SessionStatus.COMPLETED);
-                    WalkSession saved = walkSessionRepository.save(walkSession);
+                    WalkSession saved = walkSessionRepository.save(endSession(walkSession));
                     return convertToDto(saved);
                 }).orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id"+ id));
+    }
+
+    private WalkSession endSession(WalkSession walkSession) {
+        if (walkSession.getStatus().equals(SessionStatus.COMPLETED)) {
+            throw new  ResourceProcessingException("WalkSession with id: "+walkSession.getId()+" has already ended");
+        }
+        walkSession.setEndTime(LocalDateTime.now());
+        walkSession.setLastArrivedAt(LocalDateTime.now());
+        walkSession.setStatus(SessionStatus.COMPLETED);
+        return walkSession;
     }
 
     // when the user wants to end a session
@@ -122,12 +139,7 @@ public class WalkSessionService implements IWalkSessionService {
                     if(!walkSession.getUser().getId().equals(userId)){
                         throw new ResourceProcessingException("You are not allowed to end this session. This session does not belong to you.");
                     }
-                    if(walkSession.getStatus().equals(SessionStatus.COMPLETED)){
-                        throw new  ResourceProcessingException("WalkSession has already ended");
-                    }
-                    walkSession.setEndTime(LocalDateTime.now());
-                    walkSession.setStatus(SessionStatus.COMPLETED);
-                    WalkSession saved = walkSessionRepository.save(walkSession);
+                    WalkSession saved = walkSessionRepository.save(endSession(walkSession));
                     return convertToDto(saved);
                 }).orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id"+ id));
     }
@@ -136,7 +148,7 @@ public class WalkSessionService implements IWalkSessionService {
     public WalkSessionDto getWalkSessionByIdAndUserId(Long id, Long userId) {
         return walkSessionRepository.findByUserIdAndId(userId,id)
                 .map(this::convertToDto)
-                .orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id"+ id +" and user id "+ userId));
+                .orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id "+ id +" and user id "+ userId));
     }
 
     @Override
@@ -178,6 +190,8 @@ public class WalkSessionService implements IWalkSessionService {
         User user = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User not found with id: "+ userId));
         WalkSession walkSession = walkSessionRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id: " + id));
         Route route = routeRepository.findById(walkSession.getRoute().getId()).orElseThrow(()-> new ResourceNotFoundException("Route not found with id: "+ id));
+        if(!walkSession.getUser().getId().equals(userId))
+            throw new ResourceProcessingException("Walk session with id: "+ id + " does not belong to user with id: "+ userId);
 
         user.getWalkSessions().remove(walkSession);
         userRepository.save(user);
@@ -192,12 +206,24 @@ public class WalkSessionService implements IWalkSessionService {
     }
 
     // only for admin hence no user id
+    // this method should not be used for ending the session as there are
+    // dedicated endpoint for it
+    // hence we will throw exception instead prompting the client to use the proper end point
+    // first we check if the session is already ended or no
+    // if it is already completed no changes are allowed
     @Override
     @Transactional
     public WalkSessionDto updateWalkSessionStatus(Long id, String status) {
         return walkSessionRepository.findById(id)
                 .map(walkSession -> {
-                    walkSession.setStatus(resolveStatus(status));
+                    if(walkSession.getStatus()==SessionStatus.COMPLETED){
+                        throw new  ResourceProcessingException("WalkSession with id: "+id+" has already ended");
+                    }
+                    SessionStatus statusResolved = resolveStatus(status);
+                    if(statusResolved == SessionStatus.COMPLETED){
+                        throw new ResourceProcessingException("Please use the dedicated endpoint to end a session");
+                    }
+                    walkSession.setStatus(statusResolved);
                     return convertToDto(walkSessionRepository.save(walkSession));
                 }).orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id: "+ id));
     }

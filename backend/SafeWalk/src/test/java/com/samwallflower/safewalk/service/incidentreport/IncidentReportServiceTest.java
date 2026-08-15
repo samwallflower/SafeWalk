@@ -307,7 +307,7 @@ class IncidentReportServiceTest {
 
         assertThatThrownBy(() -> service.updateStatus(1L, "NOT_A_REAL_STATUS"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Invalid status");
+                .hasMessageContaining("Invalid report status");
     }
 
     @Test

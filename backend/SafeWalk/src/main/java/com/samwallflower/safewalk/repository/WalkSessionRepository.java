@@ -17,5 +17,8 @@ public interface WalkSessionRepository extends JpaRepository<WalkSession, Long> 
 
     List<WalkSession> findByRouteId(Long routeId);
 
+    // returns the latest session started by the user
+    Optional<WalkSession> findTopByUserIdOrderByStartTimeDesc(Long userId);
+
     Long user(User user);
 }

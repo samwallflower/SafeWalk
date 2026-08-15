@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class WalkSessionDto implements Serializable {
     private Long id;
     private Long userId;
-    private Long chosenRouteId;
+    private Long routeId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Double originLatitude;
