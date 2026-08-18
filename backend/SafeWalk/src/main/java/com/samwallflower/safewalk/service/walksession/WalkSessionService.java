@@ -3,6 +3,7 @@ package com.samwallflower.safewalk.service.walksession;
 import com.samwallflower.safewalk.dto.WalkSessionDto;
 import com.samwallflower.safewalk.enums.SessionStatus;
 import com.samwallflower.safewalk.exception.RateLimitExceededException;
+import com.samwallflower.safewalk.exception.ResourceAlreadyExistsException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
 import com.samwallflower.safewalk.exception.ResourceProcessingException;
 import com.samwallflower.safewalk.model.Route;
@@ -45,7 +46,7 @@ public class WalkSessionService implements IWalkSessionService {
         walkSessionRepository.findTopByUserIdOrderByStartTimeDesc(userId)
                 .ifPresent(session->{
                     if (session.getStatus()!=SessionStatus.COMPLETED){
-                        throw new RateLimitExceededException("Please complete previous session with id: " + session.getId()+" before starting a new session");
+                        throw new ResourceAlreadyExistsException("Please complete previous session with id: " + session.getId()+" before starting a new session");
                     }
                 });
 
