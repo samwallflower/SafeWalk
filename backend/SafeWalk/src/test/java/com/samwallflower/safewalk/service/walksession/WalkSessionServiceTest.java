@@ -3,6 +3,7 @@ package com.samwallflower.safewalk.service.walksession;
 import com.samwallflower.safewalk.dto.WalkSessionDto;
 import com.samwallflower.safewalk.enums.SessionStatus;
 import com.samwallflower.safewalk.exception.RateLimitExceededException;
+import com.samwallflower.safewalk.exception.ResourceAlreadyExistsException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
 import com.samwallflower.safewalk.exception.ResourceProcessingException;
 import com.samwallflower.safewalk.model.Route;
@@ -111,7 +112,7 @@ class WalkSessionServiceTest {
                 .thenReturn(Optional.of(priorSession));
 
         assertThatThrownBy(() -> service.startWalkSessionDto(1L, buildAddRequest(10L)))
-                .isInstanceOf(RateLimitExceededException.class)
+                .isInstanceOf(ResourceAlreadyExistsException.class)
                 .hasMessageContaining("5"); // prior session id in the message
 
         verify(walkSessionRepository, never()).save(any());
