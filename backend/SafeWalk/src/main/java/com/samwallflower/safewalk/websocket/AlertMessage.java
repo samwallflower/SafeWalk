@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class EmergencyAlertMessage {
+public class AlertMessage {
     private Long sessionId;
     private AlertMessageType type;
     private String message;
