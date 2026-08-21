@@ -2,9 +2,8 @@ package com.samwallflower.safewalk.integration.googlemaps;
 
 import com.google.maps.DirectionsApi;
 import com.google.maps.GeoApiContext;
-import com.google.maps.model.DirectionsResult;
-import com.google.maps.model.DirectionsRoute;
-import com.google.maps.model.LatLng;
+import com.google.maps.GeocodingApi;
+import com.google.maps.model.*;
 import com.samwallflower.safewalk.exception.ResourceProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,5 +50,32 @@ public class GoogleMapsClient {
             throw new ResourceProcessingException("No usable routes retuned by Google Maps.");
         }
         return candidates;
+    }
+
+    public String reverseGeocodeCountryCode(double lat, double lng){
+        try {
+            GeocodingResult[] results = GeocodingApi.reverseGeocode(geoApiContext,new LatLng(lat,lng))
+                    .await();
+
+            if (results==null || results.length == 0) {
+                throw new ResourceProcessingException("Could not resolve a location for the given coordinates.");
+            }
+
+            for(GeocodingResult result: results){
+                for (AddressComponent component:result.addressComponents){
+                    for (AddressComponentType type:component.types){
+                        if (type==AddressComponentType.COUNTRY){
+                            return component.shortName; //"HU"
+                        }
+                    }
+                }
+            }
+            throw new ResourceProcessingException("Could not determine country for the given coordinates.");
+        }catch (ResourceProcessingException e){
+            throw e;
+        } catch (Exception e) {
+            log.error("Reverse geocoding failed {}", e.getMessage());
+            throw new ResourceProcessingException("Reverse geocoding unavailable. Please try again later");
+        }
     }
 }
