@@ -14,42 +14,47 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class NotificationService implements INotificationService{
     private final SimpMessagingTemplate simpMessagingTemplate;
+    private static final String SESSION_TOPIC_PREFIX = "/topic/session/";
+    private static final String ALERT_TOPIC_PREFIX = "/topic/alert/";
+
+    private void push(String topic, Object payload){
+        log.debug("Pushing to {}", topic);
+        simpMessagingTemplate.convertAndSend(topic, payload);
+    }
+
+    private void pushAlert(Long sessionId, AlertMessage alert){
+        push(ALERT_TOPIC_PREFIX + sessionId, alert);
+
+    }
 
     @Override
     public void pushLocationUpdate(Long sessionId, WalkSessionDto sessionDto) {
-        String destination = "/topic/session/" + sessionId;
-        log.debug("Pushing location update to {}", destination);
-        simpMessagingTemplate.convertAndSend(destination, sessionDto);
+        push(SESSION_TOPIC_PREFIX + sessionId, sessionDto);
     }
 
     @Override
     public void pushEmergencyAlert(Long sessionId, AlertMessage message) {
-        String destination = "/topic/emergency/" + sessionId;
-        log.info("Pushing emergency alert to {}",  destination);
-        simpMessagingTemplate.convertAndSend(destination, message);
+        pushAlert(sessionId, message);
 
     }
 
     @Override
     public void pushIdleWarning(Long sessionId) {
         String message = "No movement detected. Please confirm you're okay.";
-        String destination = "/topic/idle-warning/" + sessionId;
         AlertMessage alert = new AlertMessage(
                 sessionId,
                 AlertMessageType.IDLE_WARNING,
                 message
         );
-        simpMessagingTemplate.convertAndSend(destination, alert);
-
+        pushAlert(sessionId, alert);
     }
 
     @Override
     public void pushRouteDeviationWarning(Long sessionId) {
-        String destination = "/topic/route-deviation/" + sessionId;
         String message = "You have deviated from your planned route.";
         AlertMessage alert = new AlertMessage(sessionId,
                 AlertMessageType.ROUTE_DEVIATION,
                 message);
-        simpMessagingTemplate.convertAndSend(destination, alert);
+        pushAlert(sessionId, alert);
     }
 }
