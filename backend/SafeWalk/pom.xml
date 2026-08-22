@@ -149,12 +149,19 @@
             <version>2.2.0</version>
         </dependency>
 
-        <!-- Required — the library depends on SLF4J and warns without a binding -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.36</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.twilio.sdk</groupId>
+            <artifactId>twilio</artifactId>
+            <version>12.1.1</version>
+            <scope>compile</scope>
+        </dependency>
+
 
     </dependencies>
 
