@@ -8,4 +8,6 @@ public interface INotificationService {
     void pushEmergencyAlert(Long sessionId, AlertMessage message);
     void pushIdleWarning(Long sessionId);
     void pushRouteDeviationWarning(Long sessionId);
+    void pushConnectionLostWarning(Long sessionId);
+    void pushAutoCompleteAlert(Long sessionId);
 }

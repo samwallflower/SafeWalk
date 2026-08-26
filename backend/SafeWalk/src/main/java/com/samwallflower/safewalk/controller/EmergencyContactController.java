@@ -18,6 +18,12 @@ import java.util.List;
 public class EmergencyContactController {
     private final IEmergencyContactService emergencyContactService;
 
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse> getAllEmergencyContacts(){
+        List<EmergencyContactDto> contacts = emergencyContactService.getAllEmergencyContacts();
+        return ResponseEntity.ok(new ApiResponse("All emergency contacts retrieved successfully", contacts));
+    }
+
     @GetMapping("/{userId}/contacts")
     public ResponseEntity<ApiResponse> getEmergencyContactsByUserId(@PathVariable Long userId) {
         List<EmergencyContactDto> contacts = emergencyContactService.getEmergencyContactsByUserId(userId);

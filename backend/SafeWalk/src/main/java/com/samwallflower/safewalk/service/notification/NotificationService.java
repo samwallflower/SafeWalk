@@ -57,4 +57,20 @@ public class NotificationService implements INotificationService{
                 message);
         pushAlert(sessionId, alert);
     }
+
+    @Override
+    public void pushConnectionLostWarning(Long sessionId) {
+
+    }
+
+    @Override
+    public void pushAutoCompleteAlert(Long sessionId) {
+        String message = "You have arrived. Session ended automatically.";
+        AlertMessage alert = new AlertMessage(
+                sessionId,
+                AlertMessageType.AUTOCOMPLETE,
+                message
+        );
+        pushAlert(sessionId, alert);
+    }
 }

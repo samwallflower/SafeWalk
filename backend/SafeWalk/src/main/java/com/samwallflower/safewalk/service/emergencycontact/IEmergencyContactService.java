@@ -12,4 +12,5 @@ public interface IEmergencyContactService {
     void deleteEmergencyContact(Long userId, Long contactId);
     EmergencyContactDto getEmergencyContactById(Long userId, Long contactId);
     EmergencyContactDto updateEmergencyContact(Long userId, Long contactId, UpdateEmergencyContactRequest updateRequest);
+    List<EmergencyContactDto> getAllEmergencyContacts();
 }

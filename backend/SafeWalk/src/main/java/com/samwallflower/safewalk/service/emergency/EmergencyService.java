@@ -56,6 +56,10 @@ public class EmergencyService implements IEmergencyService{
             log.info("Session {} is already in EMERGENCY status - skipping duplicate trigger", session.getId());
             return;
         }
+        if(session.getStatus()==SessionStatus.COMPLETED || session.getStatus()==SessionStatus.ABANDONED){
+            log.info("Session is in {} status", session.getStatus());
+            throw new ResourceProcessingException("Session in "+ session.getStatus() +" status.");
+        }
         session.setStatus(SessionStatus.EMERGENCY);
         walkSessionRepository.save(session);
 

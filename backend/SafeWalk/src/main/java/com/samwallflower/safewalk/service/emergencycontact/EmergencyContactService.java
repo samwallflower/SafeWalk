@@ -74,6 +74,14 @@ public class EmergencyContactService implements IEmergencyContactService{
         return convertToDto(emergencyContactRepository.save(contact));
     }
 
+    @Override
+    public List<EmergencyContactDto> getAllEmergencyContacts() {
+        return emergencyContactRepository.findAll()
+                .stream()
+                .map(this::convertToDto)
+                .toList();
+    }
+
 
     private EmergencyContactDto convertToDto(EmergencyContact contact) {
         return modelMapper.map(contact, EmergencyContactDto.class);
