@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -49,6 +48,11 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
     @Value("${app.anomaly.ws-timeout-seconds}")
     private long wsTimeoutSeconds;
 
+
+    // so for all active session we are checking for anomalies
+    // check idle time out - if we get no location update for a set amount of time
+    // for connection loss check we wanna check even if the user is near destination
+    // bcz even near destination we would like to make sure their phone hasn't lost connection
     @Override
     public void checkAllActiveSessions() {
         List<WalkSession> activeSessions = walkSessionRepository.findByStatus(SessionStatus.ACTIVE);
@@ -57,12 +61,13 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
         for(WalkSession session : activeSessions) {
             try{
                 boolean nearDestination = checkArrival(session);
+                checkConnectionLost(session); // always checking for added robustness
                 if(nearDestination) {
                     continue;
                 }
                 checkIdleTimeout(session);
                 checkRouteDeviation(session);
-                checkConnectionLost(session);
+
             }catch(Exception e){
                 log.error("Anomaly detection failed for session {} : {}",session.getId(), e.getMessage());
             }
@@ -92,13 +97,20 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
                 walkSessionRepository.save(session);
                 log.info("Session {} entered arrival radius", session.getId());
             }else{
+                // meaning they arrived already
                 long secondsSinceArrival= SECONDS.between(session.getLastArrivedAt(), LocalDateTime.now());
                 if(secondsSinceArrival > autoEndGracePeriodSeconds){
                     autocompleteSession(session);
                 }
             }
+            // if someone is within 30 meters we are confirming they arrived
+            // technically we are no longer checking for any anomaly
+            // is that a great choice?
             return true;
         }else {
+            // so if someone is at 31 meters or greater distance from their destination
+            // we check if their last arrival is already set or no
+            // if it is set we unset it
             if(session.getLastArrivedAt()!=null){
                 session.setLastArrivedAt(null);
                 walkSessionRepository.save(session);
@@ -110,25 +122,41 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
     private void autocompleteSession(WalkSession session) {
         session.setStatus(SessionStatus.COMPLETED);
         session.setEndTime(LocalDateTime.now());
+        session.setLastArrivedAt(LocalDateTime.now());
         session.setAutoCompleted(true);
         walkSessionRepository.save(session);
         log.info("Session {} auto completed after arrival grace period", session.getId());
         notificationService.pushAutoCompleteAlert(session.getId());
     }
 
+    /***
+     *EC-2: Stationary Emergency (User is attacked but still on route)
+     * Trigger: GPS static for ≥3 minutes without user pausing the session
+     * Solution:
+     * - AnomalyDetectionService compares `lastLocationUpdate` to now
+     * - Threshold: `NOW - lastLocationUpdate > 3 min AND alarmTriggered = false`
+     * - Action: Push `IDLE_WARNING` to user's WebSocket channel; set `alarmTriggered = true`
+     * - Grace period: 45 seconds — user must tap "I'm OK" button in UI to reset
+     * - If unacknowledged: Trigger `EmergencyProtocol`
+     * @param session
+     */
     @Override
     public void checkIdleTimeout(WalkSession session) {
         if(session.getLastLocationUpdate()==null) return;
         long secondsSinceUpdate = SECONDS.between(session.getLastLocationUpdate(), LocalDateTime.now());
 
         if(secondsSinceUpdate > idleThresholdSeconds){
-            if(session.getAlarmTriggered()!= true){
+            if(!session.getAlarmTriggered()){
                 session.setAlarmTriggered(true);
                 walkSessionRepository.save(session);
                 notificationService.pushIdleWarning(session.getId());
                 log.info("Idle warning triggered for session {}", session.getId());
 
             }else{
+                // so alarm is already triggered
+                // and still no update
+                // we check seconds since last update against idle threshold and
+                // start emergency protocol if it exceeds alarm grace period
                 long secondsSinceThreshold = secondsSinceUpdate - idleThresholdSeconds;
                 if (secondsSinceThreshold > alarmGracePeriodSeconds) {
                     log.warn("Session {} unresponsive past grace period - triggering emergency", session.getId());
@@ -147,7 +175,7 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
         if(points.size()<2) return;
 
         double minDistance = Double.MAX_VALUE;
-        for (int i = 0; i < points.size(); i++) {
+        for (int i = 0; i < points.size() - 1; i++) {
             LatLng start  = points.get(i);
             LatLng end = points.get(i+1);
             double distance = GeoUtils.distanceToSegmentMeters(

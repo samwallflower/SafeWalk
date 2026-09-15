@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -29,6 +31,10 @@ public class WalkSession {
     @JoinColumn(name="route_id", nullable = false)
     private Route route;
 
+    // many emergencies may be triggered for one session depending on situation
+    @OneToMany(fetch = FetchType.LAZY, mappedBy="session")
+    private List<Emergency> emergenciesTriggered = new ArrayList<>();
+
     @Column(nullable = false)
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -49,6 +55,8 @@ public class WalkSession {
 
     private Boolean alarmTriggered = false;
     private Boolean autoCompleted = false;
+
+
 
     public WalkSession(Double originLatitude, Double originLongitude, Double destinationLatitude, Double destinationLongitude) {
         this.originLatitude = originLatitude;

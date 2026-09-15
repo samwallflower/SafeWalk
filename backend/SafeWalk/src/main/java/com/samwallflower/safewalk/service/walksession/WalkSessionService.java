@@ -36,7 +36,7 @@ public class WalkSessionService implements IWalkSessionService {
     // then we set that saved object into our user and route object's walk session list
     // finally we save the user and route objects in their repositories
     // and return the dto
-    //if someone already has active sessions they cannot start new sessions before ending the old ones
+    // if someone already has active sessions they cannot start new sessions before ending the old ones
     @Override
     @Transactional
     public WalkSessionDto startWalkSessionDto(Long userId, AddWalkSessionRequest request) {
