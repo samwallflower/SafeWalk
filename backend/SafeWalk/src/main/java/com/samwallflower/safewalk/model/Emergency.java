@@ -25,7 +25,7 @@ public class Emergency {
     // route deviation , connection lost etc
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "walk_session_id", nullable = false)
-    private WalkSession session;
+    private WalkSession walkSession;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -12,5 +12,5 @@ public interface EmergencyRepository extends JpaRepository<Emergency, Long> {
     List<Emergency> findByTriggerSource(EmergencyTriggerSource triggerSource);
     long countByTriggerSource(EmergencyTriggerSource triggerSource);
     // session -> Walk session
-    List<Emergency> findBySessionId(Long  sessionId);
+    List<Emergency> findByWalkSessionId(Long  sessionId);
 }

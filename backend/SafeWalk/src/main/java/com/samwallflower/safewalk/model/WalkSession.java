@@ -32,7 +32,7 @@ public class WalkSession {
     private Route route;
 
     // many emergencies may be triggered for one session depending on situation
-    @OneToMany(fetch = FetchType.LAZY, mappedBy="session")
+    @OneToMany(fetch = FetchType.LAZY, mappedBy="walkSession")
     private List<Emergency> emergenciesTriggered = new ArrayList<>();
 
     @Column(nullable = false)

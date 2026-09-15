@@ -2,6 +2,7 @@ package com.samwallflower.safewalk.service.anomaly;
 
 import com.google.maps.model.EncodedPolyline;
 import com.google.maps.model.LatLng;
+import com.samwallflower.safewalk.enums.EmergencyTriggerSource;
 import com.samwallflower.safewalk.enums.SessionStatus;
 import com.samwallflower.safewalk.model.WalkSession;
 import com.samwallflower.safewalk.repository.WalkSessionRepository;
@@ -160,7 +161,7 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
                 long secondsSinceThreshold = secondsSinceUpdate - idleThresholdSeconds;
                 if (secondsSinceThreshold > alarmGracePeriodSeconds) {
                     log.warn("Session {} unresponsive past grace period - triggering emergency", session.getId());
-                    emergencyService.triggerEmergencySystem(session.getId());
+                    emergencyService.triggerEmergencySystem(session.getId(), EmergencyTriggerSource.IDLE_TIMEOUT);
                 }
             }
         }
@@ -188,7 +189,7 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
 
         if(minDistance > deviationEmergencyThresholdMeters){
             log.warn("Session {} deviated {}m from route - triggering emergency", session.getId(), minDistance);
-            emergencyService.triggerEmergencySystem(session.getId());
+            emergencyService.triggerEmergencySystem(session.getId(), EmergencyTriggerSource.ROUTE_DEVIATION);
         } else if (minDistance > deviationWarningThresholdMeters) {
             notificationService.pushRouteDeviationWarning(session.getId());
         }
@@ -201,7 +202,7 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
         long secondsSinceUpdate = SECONDS.between(session.getLastLocationUpdate(), LocalDateTime.now());
         if(secondsSinceUpdate > wsTimeoutSeconds){
             log.warn("Session {} has had no location update for {}s - treating as connection lost", session.getId(), secondsSinceUpdate);
-            emergencyService.triggerEmergencySystem(session.getId());
+            emergencyService.triggerEmergencySystem(session.getId(), EmergencyTriggerSource.CONNECTION_LOST);
         }
 
     }
