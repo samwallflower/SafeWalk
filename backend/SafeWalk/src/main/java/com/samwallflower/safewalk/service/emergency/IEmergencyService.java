@@ -16,7 +16,7 @@ public interface IEmergencyService {
     // no ownership needed since it's not a user - initiated HTTP call
     void triggerEmergencySystem(Long sessionId, EmergencyTriggerSource source);
 
-    EmergencyDto createEmergency(Long sessionId, EmergencyTriggerSource source);
+    EmergencyDto createEmergency(Long sessionId, String source);
 
     List<EmergencyDto> getAllEmergencies();
     List<EmergencyDto> getAllEmergenciesByTriggerSource(EmergencyTriggerSource source);

@@ -4,5 +4,6 @@ public enum EmergencyTriggerSource {
     MANUAL_SOS,
     IDLE_TIMEOUT,
     ROUTE_DEVIATION,
-    CONNECTION_LOST
+    CONNECTION_LOST,
+    SYSTEM
 }

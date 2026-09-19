@@ -62,10 +62,11 @@ public class EmergencyService implements IEmergencyService{
     }
 
     @Override
-    public EmergencyDto createEmergency(Long sessionId, EmergencyTriggerSource source) {
+    public EmergencyDto createEmergency(Long sessionId, String source) {
         WalkSession session = walkSessionRepository.findById(sessionId)
                 .orElseThrow(()-> new ResourceNotFoundException("Walk session not found with id: " + sessionId));
-        Emergency emergency = createEmergency(session, source);
+
+        Emergency emergency = createEmergency(session, resolveTriggerSource(source));
         return convertToDto(emergencyRepository.save(emergency));
     }
 
@@ -172,5 +173,16 @@ public class EmergencyService implements IEmergencyService{
         return String.format("https://maps.google.com/?q=%s,%s",
                 session.getLastKnownLatitude(),
                 session.getLastKnownLongitude());
+    }
+
+    private EmergencyTriggerSource resolveTriggerSource(String source) {
+        return switch (source.toUpperCase()) {
+            case "MANUAL_SOS" -> EmergencyTriggerSource.MANUAL_SOS;
+            case "IDLE_CHECKOUT" -> EmergencyTriggerSource.IDLE_TIMEOUT;
+            case "CONNECTION_LOST" -> EmergencyTriggerSource.CONNECTION_LOST;
+            case "ROUTE_DEVIATION" -> EmergencyTriggerSource.ROUTE_DEVIATION;
+            case "SYSTEM" -> EmergencyTriggerSource.SYSTEM;
+            default -> throw new IllegalArgumentException("Unknown emergency trigger source: " + source);
+        };
     }
 }
