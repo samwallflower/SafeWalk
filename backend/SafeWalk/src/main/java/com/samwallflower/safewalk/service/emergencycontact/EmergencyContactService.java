@@ -9,6 +9,7 @@ import com.samwallflower.safewalk.repository.EmergencyContactRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.request.emergencycontact.AddEmergencyContactRequest;
 import com.samwallflower.safewalk.request.emergencycontact.UpdateEmergencyContactRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,9 @@ public class EmergencyContactService implements IEmergencyContactService{
     // before we add emergency contacts we must make sure the user has less than 5 contacts
     // otherwise someone might add 100 emergency contacts and spam the system
     // we don't want that
+    // since emergency contact also affects user we use transactional
     @Override
+    @Transactional
     public EmergencyContactDto addEmergencyContact(Long userId, AddEmergencyContactRequest emergencyContact) {
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new ResourceNotFoundException("User not found with id: " + userId));
@@ -37,7 +40,8 @@ public class EmergencyContactService implements IEmergencyContactService{
         }
         EmergencyContact contact = new EmergencyContact();
         contact.setContactName(emergencyContact.getContactName());
-        contact.setContactPhone(emergencyContact.getContactPhone());
+        Optional.ofNullable(emergencyContact.getContactPhone()).ifPresent(contact::setContactPhone);
+        contact.setContactEmail(emergencyContact.getContactEmail());
         contact.setUser(user);
 
         return convertToDto(emergencyContactRepository.save(contact));
@@ -57,6 +61,7 @@ public class EmergencyContactService implements IEmergencyContactService{
     // we must also remove the contact from the list of the users current contacts and then save the user
     // then we delete the contact
     @Override
+    @Transactional
     public void deleteEmergencyContact(Long userId, Long contactId) {
         emergencyContactRepository.delete(validateOwnership(userId, contactId));
     }
@@ -67,10 +72,12 @@ public class EmergencyContactService implements IEmergencyContactService{
     }
 
     @Override
+    @Transactional
     public EmergencyContactDto updateEmergencyContact(Long userId, Long contactId, UpdateEmergencyContactRequest updateRequest) {
         EmergencyContact contact = validateOwnership(userId, contactId);
         Optional.ofNullable(updateRequest.getContactName()).ifPresent(contact::setContactName);
         Optional.ofNullable(updateRequest.getContactPhone()).ifPresent(contact::setContactPhone);
+        Optional.ofNullable(updateRequest.getContactEmail()).ifPresent(contact::setContactEmail);
         return convertToDto(emergencyContactRepository.save(contact));
     }
 

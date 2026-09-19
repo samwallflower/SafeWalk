@@ -13,4 +13,6 @@ public class EmergencyContactDto implements Serializable {
     private Long id;
     private String contactName;
     private String contactPhone;
+    private String contactEmail;
+
 }

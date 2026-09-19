@@ -18,6 +18,7 @@ import java.util.List;
 public class EmergencyContactController {
     private final IEmergencyContactService emergencyContactService;
 
+    //TODO:ADMIN ONLY
     @GetMapping("/all")
     public ResponseEntity<ApiResponse> getAllEmergencyContacts(){
         List<EmergencyContactDto> contacts = emergencyContactService.getAllEmergencyContacts();

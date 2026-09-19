@@ -17,6 +17,7 @@ public class EmergencyContact {
     private Long id;
     private String contactName;
     private String contactPhone;
+    private String contactEmail;
 
     // one user can have many emergency contacts upto 5
     @ManyToOne(fetch = FetchType.LAZY)
