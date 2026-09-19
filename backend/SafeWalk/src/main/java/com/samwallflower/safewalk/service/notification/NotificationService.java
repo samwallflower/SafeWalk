@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class NotificationService implements INotificationService{
+    // sending notification to websocket topic
     private final SimpMessagingTemplate simpMessagingTemplate;
     private static final String SESSION_TOPIC_PREFIX = "/topic/session/";
     private static final String ALERT_TOPIC_PREFIX = "/topic/alert/";
@@ -57,7 +58,7 @@ public class NotificationService implements INotificationService{
                 message);
         pushAlert(sessionId, alert);
     }
-
+    //TODO:Implement it
     @Override
     public void pushConnectionLostWarning(Long sessionId) {
 

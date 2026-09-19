@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -60,9 +61,9 @@ public class EmergencyService implements IEmergencyService{
         executeEmergencyProtocol(session, source);
 
     }
-
+    // for dev purposes
     @Override
-    public EmergencyDto createEmergency(Long sessionId, String source) {
+    public EmergencyDto addEmergency(Long sessionId, String source) {
         WalkSession session = walkSessionRepository.findById(sessionId)
                 .orElseThrow(()-> new ResourceNotFoundException("Walk session not found with id: " + sessionId));
 
@@ -110,40 +111,109 @@ public class EmergencyService implements IEmergencyService{
 
         User user = session.getUser();
         List<EmergencyContact> contacts = user.getEmergencyContacts();
+        List<EmergencyContact> notifiedContacts = new ArrayList<>();
+
         if(contacts==null || contacts.isEmpty()){
             log.warn("User {} has no emergency contacts to notify for session {}", user.getId(), session.getId());
             throw new ResourceNotFoundException("No emergency contacts found for user with id: " + user.getId());
-        }else{
+        }else {
             String trackingLink = buildTrackingLink(session);
             String authorityLine = buildAuthorityLine(session);
-            String smsBody = String.format(
-                    "%s %s may need help. Live location: %s",
-                    user.getFirstName(), user.getLastName(), trackingLink
+            String subject = "Emergency Alert: " + user.getFirstName() + " " + user.getLastName() + " may need help!";
+            String plainBody = String.format(
+                    "%s %s may need help. %nLive location: %s%n%s",
+                    user.getFirstName(), user.getLastName(), trackingLink, authorityLine
             );
 
             for (EmergencyContact emergencyContact : contacts) {
-                try {
-                    twilioClient.sendSms(emergencyContact.getContactPhone(), smsBody);
-                    log.info("Emergency SMS sent to contact {} for session {}", emergencyContact.getId(), session.getId());
-                }catch (ResourceProcessingException e){
-                    log.error("Failed to notify contact {} for session {}: {}",
-                            emergencyContact.getId(), session.getId(), e.getMessage());
+                boolean smsSucceeded = false;
+                boolean emailSucceeded = false;
+                if (emergencyContact.getContactPhone() != null && !emergencyContact.getContactPhone().isEmpty()) {
+                    try {
+                        twilioClient.sendSms(emergencyContact.getContactPhone(), plainBody);
+                        smsSucceeded = true;
+                        log.info("Emergency SMS sent to contact {} for session {}", emergencyContact.getId(), session.getId());
+                    } catch (ResourceProcessingException e) {
+                        log.error("Failed to send SMS to contact {} for session {}: {}",
+                                emergencyContact.getId(), session.getId(), e.getMessage());
+                    }
+                }
+                if (emergencyContact.getContactEmail() != null && !emergencyContact.getContactEmail().isEmpty()) {
+                    try {
+                        String htmlBody = buildEmergencyEmailHtml(user, trackingLink, authorityLine);
+                        emailSucceeded = true;
+                        log.info("Emergency email sent to contact {} for session {}", emergencyContact.getId(), session.getId());
+                    } catch (ResourceProcessingException e) {
+                        log.error("Failed to send email to contact {} for session {}: {}",
+                                emergencyContact.getId(), session.getId(), e.getMessage());
+                    }
+                }
+
+                if(smsSucceeded || emailSucceeded){
+                    notifiedContacts.add(emergencyContact);
                 }
             }
         }
 
         Emergency emergency = emergencyRepository.save(createEmergency(session, source));
+        emergency.setNotifiedEmergencyContacts(notifiedContacts);
+        emergencyRepository.save(emergency);
 
         AlertMessage alert = new AlertMessage(
                 session.getId(),
                 AlertMessageType.EMERGENCY_TRIGGERED,
                 "Emergency protocol activated for this session."
         );
+        // sending notification to user via websocket
         notificationService.pushEmergencyAlert(session.getId(), alert);
 
-        log.info("Emergency protocol executed for session {}", session.getId());
+        log.info("Emergency protocol executed for session {}, {} of {} contacts notified", session.getId(),
+                notifiedContacts.size(), session.getUser().getEmergencyContacts()!=null ? session.getUser().getEmergencyContacts().size() : 0);
 
 
+    }
+
+    private String buildEmergencyEmailHtml(User user, String trackingLink, String authorityLine) {
+        return """
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Emergency Alert</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; margin: 0;">
+                  <table role="presentation" width="100%%" style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+                    <tr>
+                      <td style="background-color: #d32f2f; padding: 20px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 20px;">⚠ Emergency Alert</h1>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 24px;">
+                        <p style="font-size: 16px; color: #333333;">
+                          <strong>%s %s</strong> may need help right now.
+                        </p>
+                        <p style="text-align: center; margin: 24px 0;">
+                          <a href="%s" style="background-color: #d32f2f; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+                            View Live Location
+                          </a>
+                        </p>
+                        %s
+                        <p style="font-size: 13px; color: #888888; margin-top: 24px;">
+                          This alert was sent automatically by SafeWalk on behalf of %s %s.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </body>
+                </html>
+                """.formatted(
+                user.getFirstName(), user.getLastName(),
+                trackingLink,
+                authorityLine.isBlank() ? "" : "<p style=\"font-size: 14px; color: #555555; background-color: #fdecea; padding: 12px; border-radius: 4px;\">" + authorityLine + "</p>",
+                user.getFirstName(), user.getLastName()
+        );
     }
 
     private Emergency createEmergency(WalkSession session, EmergencyTriggerSource source) {
@@ -186,3 +256,4 @@ public class EmergencyService implements IEmergencyService{
         };
     }
 }
+

@@ -25,7 +25,7 @@ public class EmergencyController {
     //TODO: ADMIN ONLY
     @PostMapping("/session/{sessionId}/create")
     public ResponseEntity<ApiResponse> createEmergency(@PathVariable Long sessionId, @RequestParam String source) {
-        EmergencyDto emergency = emergencyService.createEmergency(sessionId, source);
+        EmergencyDto emergency = emergencyService.addEmergency(sessionId, source);
         return ResponseEntity.ok(new ApiResponse("Emergency created successfully", emergency));
     }
 
