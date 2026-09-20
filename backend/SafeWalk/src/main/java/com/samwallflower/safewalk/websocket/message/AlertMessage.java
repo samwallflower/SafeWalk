@@ -1,4 +1,4 @@
-package com.samwallflower.safewalk.websocket;
+package com.samwallflower.safewalk.websocket.message;
 
 import com.samwallflower.safewalk.enums.AlertMessageType;
 import lombok.AllArgsConstructor;

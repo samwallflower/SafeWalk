@@ -9,6 +9,7 @@ import com.samwallflower.safewalk.repository.WalkSessionRepository;
 import com.samwallflower.safewalk.service.emergency.IEmergencyService;
 import com.samwallflower.safewalk.service.notification.INotificationService;
 import com.samwallflower.safewalk.util.GeoUtils;
+import com.samwallflower.safewalk.websocket.connection.WalkSessionConnectionRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,7 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
     private final WalkSessionRepository  walkSessionRepository;
     private final INotificationService notificationService;
     private final IEmergencyService emergencyService;
+    private final WalkSessionConnectionRegistry connectionRegistry;
 
     @Value("${app.anomaly.arrival-radius-meters}")
     private double arrivalRadiusMeters;
@@ -198,12 +200,17 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
 
     @Override
     public void checkConnectionLost(WalkSession session) {
-        if(session.getLastLocationUpdate()==null) return;
-        long secondsSinceUpdate = SECONDS.between(session.getLastLocationUpdate(), LocalDateTime.now());
-        if(secondsSinceUpdate > wsTimeoutSeconds){
-            log.warn("Session {} has had no location update for {}s - treating as connection lost", session.getId(), secondsSinceUpdate);
-            emergencyService.triggerEmergencySystem(session.getId(), EmergencyTriggerSource.CONNECTION_LOST);
-        }
+        // check if the session has been disconnected for longer than the timeout
+        // if so, trigger an emergency
+        // we are checking for connection lost even if the user is near destination
+        // bcz even near destination we would like to make sure their phone hasn't lost connection
+        connectionRegistry.getDisconnectedAt(session.getId()).ifPresent(disconnectedAt -> {
+            long secondsSinceDisconnect = SECONDS.between(disconnectedAt, LocalDateTime.now());
+            if (secondsSinceDisconnect > wsTimeoutSeconds) {
+                log.warn("Session {} lost connection for {} seconds - triggering emergency", session.getId(), secondsSinceDisconnect);
+                emergencyService.triggerEmergencySystem(session.getId(), EmergencyTriggerSource.CONNECTION_LOST);
+            }
+        });
 
     }
 }

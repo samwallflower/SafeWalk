@@ -2,7 +2,7 @@ package com.samwallflower.safewalk.service.notification;
 
 import com.samwallflower.safewalk.dto.WalkSessionDto;
 import com.samwallflower.safewalk.enums.AlertMessageType;
-import com.samwallflower.safewalk.websocket.AlertMessage;
+import com.samwallflower.safewalk.websocket.message.AlertMessage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;

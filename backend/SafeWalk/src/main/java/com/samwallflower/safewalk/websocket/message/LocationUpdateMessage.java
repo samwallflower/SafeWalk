@@ -1,4 +1,4 @@
-package com.samwallflower.safewalk.websocket;
+package com.samwallflower.safewalk.websocket.message;
 
 import lombok.Data;
 

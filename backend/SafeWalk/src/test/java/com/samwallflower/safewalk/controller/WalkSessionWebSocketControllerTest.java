@@ -3,7 +3,7 @@ package com.samwallflower.safewalk.controller;
 import com.samwallflower.safewalk.dto.WalkSessionDto;
 import com.samwallflower.safewalk.enums.SessionStatus;
 import com.samwallflower.safewalk.service.walksession.IWalkSessionService;
-import com.samwallflower.safewalk.websocket.LocationUpdateMessage;
+import com.samwallflower.safewalk.websocket.message.LocationUpdateMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

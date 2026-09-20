@@ -17,7 +17,7 @@ import com.samwallflower.safewalk.repository.WalkSessionRepository;
 import com.samwallflower.safewalk.service.email.EmailService;
 import com.samwallflower.safewalk.service.emergencyauthority.IEmergencyAuthorityService;
 import com.samwallflower.safewalk.service.notification.INotificationService;
-import com.samwallflower.safewalk.websocket.AlertMessage;
+import com.samwallflower.safewalk.websocket.message.AlertMessage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
