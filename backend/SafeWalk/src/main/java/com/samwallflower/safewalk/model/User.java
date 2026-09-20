@@ -54,7 +54,7 @@ public class User {
     )
     private Collection<Role> roles = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<EmergencyContact> emergencyContacts = new ArrayList<>();
 
     @OneToMany(mappedBy = "user")

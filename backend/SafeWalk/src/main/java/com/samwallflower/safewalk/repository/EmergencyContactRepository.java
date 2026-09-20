@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface EmergencyContactRepository extends JpaRepository<EmergencyContact, Long> {
     List<EmergencyContact> findByUserId(Long userId);
+    boolean existsByContactEmail(String email);
 
 }

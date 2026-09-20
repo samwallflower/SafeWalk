@@ -14,6 +14,7 @@ import com.samwallflower.safewalk.model.User;
 import com.samwallflower.safewalk.model.WalkSession;
 import com.samwallflower.safewalk.repository.EmergencyRepository;
 import com.samwallflower.safewalk.repository.WalkSessionRepository;
+import com.samwallflower.safewalk.service.email.EmailService;
 import com.samwallflower.safewalk.service.emergencyauthority.IEmergencyAuthorityService;
 import com.samwallflower.safewalk.service.notification.INotificationService;
 import com.samwallflower.safewalk.websocket.AlertMessage;
@@ -35,12 +36,13 @@ public class EmergencyService implements IEmergencyService{
     private final TwilioClient twilioClient;
     private final INotificationService notificationService;
     private final IEmergencyAuthorityService emergencyAuthorityService;
+    private final EmailService emailService;
     private final ModelMapper modelMapper;
 
 
     @Override
     @Transactional
-    public void triggerEmergencyByUser(Long sessionId, Long userId) {
+    public EmergencyDto triggerEmergencyByUser(Long sessionId, Long userId) {
         WalkSession session = walkSessionRepository.findById(sessionId)
                 .orElseThrow(()-> new ResourceNotFoundException("Walk session not found with id: " + sessionId));
 
@@ -48,17 +50,17 @@ public class EmergencyService implements IEmergencyService{
             throw new ResourceProcessingException("Walk session with id: " + sessionId + " does not belong to the user with id: " + userId);
         }
 
-        executeEmergencyProtocol(session, EmergencyTriggerSource.MANUAL_SOS);
+        return executeEmergencyProtocol(session, EmergencyTriggerSource.MANUAL_SOS);
 
     }
 
     @Override
     @Transactional
-    public void triggerEmergencySystem(Long sessionId, EmergencyTriggerSource source) {
+    public EmergencyDto triggerEmergencySystem(Long sessionId, EmergencyTriggerSource source) {
         WalkSession session = walkSessionRepository.findById(sessionId)
                 .orElseThrow(()-> new ResourceNotFoundException("Walk session not found with id: " + sessionId));
 
-        executeEmergencyProtocol(session, source);
+        return executeEmergencyProtocol(session, source);
 
     }
     // for dev purposes
@@ -97,10 +99,10 @@ public class EmergencyService implements IEmergencyService{
         return modelMapper.map(emergency, EmergencyDto.class);
     }
 
-    private void executeEmergencyProtocol(WalkSession session, EmergencyTriggerSource source) {
+    private EmergencyDto executeEmergencyProtocol(WalkSession session, EmergencyTriggerSource source) {
         if (session.getStatus()== SessionStatus.EMERGENCY){
             log.info("Session {} is already in EMERGENCY status - skipping duplicate trigger", session.getId());
-            return;
+            return null;
         }
         if(session.getStatus()==SessionStatus.COMPLETED || session.getStatus()==SessionStatus.ABANDONED){
             log.info("Session is in {} status", session.getStatus());
@@ -113,10 +115,16 @@ public class EmergencyService implements IEmergencyService{
         List<EmergencyContact> contacts = user.getEmergencyContacts();
         List<EmergencyContact> notifiedContacts = new ArrayList<>();
 
+
+        // EMERGENCY CONTACT NOTIFICATION
+        // removed throw new ResourceNotFoundException for robust architecture
+        // an exception would roll back session status change to emergency
+        // we would like to avoid that
+        // hence we just log the warning
         if(contacts==null || contacts.isEmpty()){
-            log.warn("User {} has no emergency contacts to notify for session {}", user.getId(), session.getId());
-            throw new ResourceNotFoundException("No emergency contacts found for user with id: " + user.getId());
+            log.warn("User {} has no emergency contacts to notify for session {}", user.getId(), session.getId());throw new ResourceNotFoundException("No emergency contacts found for user with id: " + user.getId());
         }else {
+            // building the tracking link
             String trackingLink = buildTrackingLink(session);
             String authorityLine = buildAuthorityLine(session);
             String subject = "Emergency Alert: " + user.getFirstName() + " " + user.getLastName() + " may need help!";
@@ -124,10 +132,12 @@ public class EmergencyService implements IEmergencyService{
                     "%s %s may need help. %nLive location: %s%n%s",
                     user.getFirstName(), user.getLastName(), trackingLink, authorityLine
             );
-
+            // looping through emergency contacts
             for (EmergencyContact emergencyContact : contacts) {
                 boolean smsSucceeded = false;
                 boolean emailSucceeded = false;
+
+                // SMS sending
                 if (emergencyContact.getContactPhone() != null && !emergencyContact.getContactPhone().isEmpty()) {
                     try {
                         twilioClient.sendSms(emergencyContact.getContactPhone(), plainBody);
@@ -138,9 +148,11 @@ public class EmergencyService implements IEmergencyService{
                                 emergencyContact.getId(), session.getId(), e.getMessage());
                     }
                 }
+                // Email sending
                 if (emergencyContact.getContactEmail() != null && !emergencyContact.getContactEmail().isEmpty()) {
                     try {
                         String htmlBody = buildEmergencyEmailHtml(user, trackingLink, authorityLine);
+                        emailService.sendEmail(emergencyContact.getContactEmail(), subject, htmlBody);
                         emailSucceeded = true;
                         log.info("Emergency email sent to contact {} for session {}", emergencyContact.getId(), session.getId());
                     } catch (ResourceProcessingException e) {
@@ -155,9 +167,8 @@ public class EmergencyService implements IEmergencyService{
             }
         }
 
-        Emergency emergency = emergencyRepository.save(createEmergency(session, source));
+        Emergency emergency = createEmergency(session, source);
         emergency.setNotifiedEmergencyContacts(notifiedContacts);
-        emergencyRepository.save(emergency);
 
         AlertMessage alert = new AlertMessage(
                 session.getId(),
@@ -171,6 +182,7 @@ public class EmergencyService implements IEmergencyService{
                 notifiedContacts.size(), session.getUser().getEmergencyContacts()!=null ? session.getUser().getEmergencyContacts().size() : 0);
 
 
+        return convertToDto(emergencyRepository.save(emergency));
     }
 
     private String buildEmergencyEmailHtml(User user, String trackingLink, String authorityLine) {
@@ -226,16 +238,16 @@ public class EmergencyService implements IEmergencyService{
     }
 
     private String buildAuthorityLine(WalkSession session) {
-        try{
+        try {
             EmergencyAuthorityDto authority = emergencyAuthorityService.findEmergencyAuthorityByLocation(
                     session.getLastKnownLatitude(),
                     session.getLastKnownLongitude()
             );
             return String.format("Nearest emergency number: %s, Police Phone Number: %s, Ambulance Number: %s",
                     authority.getGeneralEmergencyNumber(), authority.getPoliceNumber(), authority.getAmbulanceNumber());
-        }catch (ResourceNotFoundException e){
-            log.warn("No emergency authority found for session {}", session.getId());
-            throw e;
+        } catch (ResourceNotFoundException e) {
+            log.warn("No emergency authority found for session {}: {}", session.getId(), e.getMessage());
+            return "";
         }
     }
 
@@ -248,7 +260,7 @@ public class EmergencyService implements IEmergencyService{
     private EmergencyTriggerSource resolveTriggerSource(String source) {
         return switch (source.toUpperCase()) {
             case "MANUAL_SOS" -> EmergencyTriggerSource.MANUAL_SOS;
-            case "IDLE_CHECKOUT" -> EmergencyTriggerSource.IDLE_TIMEOUT;
+            case "IDLE_TIMEOUT" -> EmergencyTriggerSource.IDLE_TIMEOUT;
             case "CONNECTION_LOST" -> EmergencyTriggerSource.CONNECTION_LOST;
             case "ROUTE_DEVIATION" -> EmergencyTriggerSource.ROUTE_DEVIATION;
             case "SYSTEM" -> EmergencyTriggerSource.SYSTEM;

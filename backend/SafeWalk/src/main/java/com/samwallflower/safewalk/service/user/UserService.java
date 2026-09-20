@@ -42,7 +42,7 @@ public class UserService implements IUserService {
                     newUser.setFirstName(req.getFirstName());
                     newUser.setLastName(req.getLastName());
                     newUser.setEmail(req.getEmail());
-                    newUser.setPassword(req.getPassword()); // In a real application, you should hash the password
+                    newUser.setPassword(req.getPassword()); // TODO: hash the password
                     newUser.setRoles(Set.of(role));
                     return convertToDto(userRepository.save(newUser));
                 })
