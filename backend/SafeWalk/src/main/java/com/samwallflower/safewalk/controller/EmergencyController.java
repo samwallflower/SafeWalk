@@ -18,8 +18,8 @@ public class EmergencyController {
 
     @PostMapping("/session/{sessionId}/user/{userId}/trigger")
     public ResponseEntity<ApiResponse> triggerEmergencyByUser(@PathVariable Long sessionId, @PathVariable Long userId) {
-        emergencyService.triggerEmergencyByUser(sessionId, userId);
-        return ResponseEntity.ok(new ApiResponse("Emergency protocol triggered successfully", null));
+        EmergencyDto emergency = emergencyService.triggerEmergencyByUser(sessionId, userId);
+        return ResponseEntity.ok(new ApiResponse("Emergency protocol triggered successfully", emergency));
     }
 
     //TODO: ADMIN ONLY
