@@ -6,6 +6,7 @@ import com.samwallflower.safewalk.request.incidentreport.AddIncidentReportReques
 import com.samwallflower.safewalk.request.incidentreport.UpdateIncidentReportRequest;
 import com.samwallflower.safewalk.response.ApiResponse;
 import com.samwallflower.safewalk.service.incidentreport.IIncidentReportService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -115,7 +116,7 @@ public class IncidentReportController {
     }
 
     @PutMapping("/{userId}/report/{id}/update")
-    public ResponseEntity<ApiResponse> updateIncidentReport(@RequestBody UpdateIncidentReportRequest request, @PathVariable Long id, @PathVariable Long userId) {
+    public ResponseEntity<ApiResponse> updateIncidentReport(@Valid @RequestBody UpdateIncidentReportRequest request, @PathVariable Long id, @PathVariable Long userId) {
         IncidentReportDto incidentReport = incidentReportService.updateIncidentReport(request, userId, id);
         return ResponseEntity.ok(new ApiResponse("Incident report updated successfully", incidentReport));
     }
@@ -134,7 +135,7 @@ public class IncidentReportController {
     }
 
     @PostMapping("/{userId}/report/add")
-    public ResponseEntity<ApiResponse> addIncidentReport(@RequestBody AddIncidentReportRequest request, @PathVariable Long userId) {
+    public ResponseEntity<ApiResponse> addIncidentReport(@Valid @RequestBody AddIncidentReportRequest request, @PathVariable Long userId) {
         IncidentReportDto addedIncidentReport = incidentReportService.addIncidentReport(request, userId);
         return ResponseEntity.ok(new ApiResponse("Incident report added successfully", addedIncidentReport));
     }

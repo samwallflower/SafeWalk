@@ -122,7 +122,7 @@ public class EmergencyService implements IEmergencyService{
         // we would like to avoid that
         // hence we just log the warning
         if(contacts==null || contacts.isEmpty()){
-            log.warn("User {} has no emergency contacts to notify for session {}", user.getId(), session.getId());throw new ResourceNotFoundException("No emergency contacts found for user with id: " + user.getId());
+            log.warn("User {} has no emergency contacts to notify for session {}", user.getId(), session.getId());
         }else {
             // building the tracking link
             String trackingLink = buildTrackingLink(session);

@@ -34,6 +34,14 @@ class EmergencyContactControllerTest {
 
     @MockitoBean private IEmergencyContactService emergencyContactService;
 
+    private AddEmergencyContactRequest validAddRequest() {
+        AddEmergencyContactRequest request = new AddEmergencyContactRequest();
+        request.setContactName("Best Friend");
+        request.setContactPhone("+36555123467");
+        request.setContactEmail("friend@example.com");
+        return request;
+    }
+
     @Test
     void getEmergencyContactsByUserId_returns200() throws Exception {
         when(emergencyContactService.getEmergencyContactsByUserId(1L))
@@ -77,10 +85,6 @@ class EmergencyContactControllerTest {
 
     @Test
     void addEmergencyContact_returns200_onSuccess() throws Exception {
-        AddEmergencyContactRequest request = new AddEmergencyContactRequest();
-        request.setContactName("Best Friend");
-        request.setContactPhone("555-1234");
-
         EmergencyContactDto dto = new EmergencyContactDto();
         dto.setContactName("Best Friend");
 
@@ -88,24 +92,79 @@ class EmergencyContactControllerTest {
 
         mockMvc.perform(post("/api/v1/emergency-contacts/1/add")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(validAddRequest())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.contactName").value("Best Friend"));
     }
 
     @Test
     void addEmergencyContact_returns500_whenAtContactLimit() throws Exception {
-        AddEmergencyContactRequest request = new AddEmergencyContactRequest();
-        request.setContactName("Best Friend");   // valid, non-blank
-        request.setContactPhone("555-1234");     // valid, matches pattern
-
         when(emergencyContactService.addEmergencyContact(eq(1L), any()))
                 .thenThrow(new ResourceProcessingException("User with id: 1 already has 5 emergency contacts."));
 
         mockMvc.perform(post("/api/v1/emergency-contacts/1/add")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(validAddRequest()))) // now uses a valid request
                 .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void addEmergencyContact_returns400_whenNameBlank() throws Exception {
+        AddEmergencyContactRequest request = validAddRequest();
+        request.setContactName("");
+
+        mockMvc.perform(post("/api/v1/emergency-contacts/1/add")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void addEmergencyContact_returns400_whenPhoneInvalid() throws Exception {
+        AddEmergencyContactRequest request = validAddRequest();
+        request.setContactPhone("not-a-phone-number!!!");
+
+        mockMvc.perform(post("/api/v1/emergency-contacts/1/add")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void addEmergencyContact_returns200_whenPhoneOmitted() throws Exception {
+        // confirms phone is genuinely optional now
+        AddEmergencyContactRequest request = validAddRequest();
+        request.setContactPhone(null);
+
+        EmergencyContactDto dto = new EmergencyContactDto();
+        when(emergencyContactService.addEmergencyContact(eq(1L), any())).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/emergency-contacts/1/add")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void addEmergencyContact_returns400_whenEmailBlank() throws Exception {
+        AddEmergencyContactRequest request = validAddRequest();
+        request.setContactEmail("");
+
+        mockMvc.perform(post("/api/v1/emergency-contacts/1/add")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void addEmergencyContact_returns400_whenEmailMalformed() throws Exception {
+        AddEmergencyContactRequest request = validAddRequest();
+        request.setContactEmail("not-an-email");
+
+        mockMvc.perform(post("/api/v1/emergency-contacts/1/add")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -126,48 +185,7 @@ class EmergencyContactControllerTest {
     }
 
     @Test
-    void deleteEmergencyContact_returns200_onSuccess() throws Exception {
-        mockMvc.perform(delete("/api/v1/emergency-contacts/1/contacts/10/delete"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").doesNotExist());
-    }
-
-    @Test
-    void deleteEmergencyContact_returns404_whenNotOwned() throws Exception {
-        org.mockito.Mockito.doThrow(new ResourceNotFoundException("Emergency contact with id: 10 does not belong to user with id: 1"))
-                .when(emergencyContactService).deleteEmergencyContact(1L, 10L);
-
-        mockMvc.perform(delete("/api/v1/emergency-contacts/1/contacts/10/delete"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void addEmergencyContact_returns400_whenNameBlank() throws Exception {
-        AddEmergencyContactRequest request = new AddEmergencyContactRequest();
-        request.setContactName("");
-        request.setContactPhone("555-1234");
-
-        mockMvc.perform(post("/api/v1/emergency-contacts/1/add")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void addEmergencyContact_returns400_whenPhoneInvalid() throws Exception {
-        AddEmergencyContactRequest request = new AddEmergencyContactRequest();
-        request.setContactName("Mom");
-        request.setContactPhone("not-a-phone-number!!!");
-
-        mockMvc.perform(post("/api/v1/emergency-contacts/1/add")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void updateEmergencyContact_returns200_whenFieldsOmitted() throws Exception {
-        // confirms partial update (both fields null) is NOT rejected
         UpdateEmergencyContactRequest request = new UpdateEmergencyContactRequest();
 
         EmergencyContactDto dto = new EmergencyContactDto();
@@ -188,5 +206,21 @@ class EmergencyContactControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deleteEmergencyContact_returns200_onSuccess() throws Exception {
+        mockMvc.perform(delete("/api/v1/emergency-contacts/1/contacts/10/delete"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void deleteEmergencyContact_returns404_whenNotOwned() throws Exception {
+        org.mockito.Mockito.doThrow(new ResourceNotFoundException("Emergency contact with id: 10 does not belong to user with id: 1"))
+                .when(emergencyContactService).deleteEmergencyContact(1L, 10L);
+
+        mockMvc.perform(delete("/api/v1/emergency-contacts/1/contacts/10/delete"))
+                .andExpect(status().isNotFound());
     }
 }
