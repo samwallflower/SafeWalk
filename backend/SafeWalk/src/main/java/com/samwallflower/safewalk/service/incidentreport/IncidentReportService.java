@@ -36,6 +36,8 @@ public class IncidentReportService implements IIncidentReportService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
+    // Rate Limiter -> one person can only add a report every 5 minutes
+    // TODO: change the minutes limit to a final variable
     @Override
     public IncidentReportDto addIncidentReport(AddIncidentReportRequest request, Long userId) {
         IncidentCategory category = categoryRepository.findByNameIgnoreCase(request.getCategory().getName())

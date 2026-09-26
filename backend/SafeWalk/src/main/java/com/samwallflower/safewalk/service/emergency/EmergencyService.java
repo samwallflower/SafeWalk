@@ -54,6 +54,7 @@ public class EmergencyService implements IEmergencyService{
 
     }
 
+    // will be called by system automatically
     @Override
     @Transactional
     public EmergencyDto triggerEmergencySystem(Long sessionId, EmergencyTriggerSource source) {

@@ -10,6 +10,7 @@ import com.samwallflower.safewalk.service.emergency.IEmergencyService;
 import com.samwallflower.safewalk.service.notification.INotificationService;
 import com.samwallflower.safewalk.util.GeoUtils;
 import com.samwallflower.safewalk.websocket.connection.WalkSessionConnectionRegistry;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,6 +58,7 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
     // for connection loss check we wanna check even if the user is near destination
     // bcz even near destination we would like to make sure their phone hasn't lost connection
     @Override
+    @Transactional
     public void checkAllActiveSessions() {
         List<WalkSession> activeSessions = walkSessionRepository.findByStatus(SessionStatus.ACTIVE);
         log.debug("Running anomaly detection on {} active sessions", activeSessions.size());

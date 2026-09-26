@@ -1,14 +1,8 @@
 package com.samwallflower.safewalk.data;
 
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
-import com.samwallflower.safewalk.model.EmergencyAuthority;
-import com.samwallflower.safewalk.model.EmergencyContact;
-import com.samwallflower.safewalk.model.Role;
-import com.samwallflower.safewalk.model.User;
-import com.samwallflower.safewalk.repository.EmergencyAuthorityRepository;
-import com.samwallflower.safewalk.repository.EmergencyContactRepository;
-import com.samwallflower.safewalk.repository.RoleRepository;
-import com.samwallflower.safewalk.repository.UserRepository;
+import com.samwallflower.safewalk.model.*;
+import com.samwallflower.safewalk.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +27,7 @@ public class DataInitializer implements ApplicationListener<ApplicationReadyEven
     private final UserRepository userRepository;
     private final EmergencyContactRepository emergencyContactRepository;
     private final EmergencyAuthorityRepository emergencyAuthorityRepository;
+    private final IncidentCategoryRepository incidentCategoryRepository;
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
@@ -41,6 +36,7 @@ public class DataInitializer implements ApplicationListener<ApplicationReadyEven
         createDefaultUserIfNotExists();
         createDefaultAdminIfNotExists();
         createDefaultEmergencyAuthoritiesIfNotExists();
+        createDefaultIncidentCategoriesIfNotExists();
     }
 
     private void createDefaultRoleIfNotExist(Set<String> roles){
@@ -140,6 +136,37 @@ public class DataInitializer implements ApplicationListener<ApplicationReadyEven
         }
     }
 
+    private void createDefaultIncidentCategoriesIfNotExists() {
+        List<IncidentCategory> defaultCategories = List.of(
+                createIncidentCategory("Robbery", 20, "A theft involving force or threat of force."),
+                createIncidentCategory("Road Accident", 18, "An incident involving vehicles on the road."),
+                createIncidentCategory("Medical Emergency", 15, "A sudden health crisis requiring immediate attention."),
+                createIncidentCategory("Fire", 17, "An uncontrolled fire causing damage or danger."),
+                createIncidentCategory("Natural Disaster", 19, "Events like earthquakes, floods, or hurricanes."),
+                createIncidentCategory("Physical Assault", 18, "Direct physical attack on a person"),
+                createIncidentCategory("Harassment", 15, "Verbal threats, following, or intimidation"),
+                createIncidentCategory("Suspicious Activity", 10, "Unconfirmed suspicious behavior or person"),
+                createIncidentCategory("Vandalism", 6, "Property damage without direct threat to persons")
+        );
+
+        int addedCount = 0;
+
+        for (IncidentCategory category : defaultCategories) {
+            // Check individually using the exact category name
+            if (!incidentCategoryRepository.existsByNameIgnoreCase(category.getName())) {
+                incidentCategoryRepository.save(category);
+                addedCount++;
+                log.info("Seeded incident category: {}", category.getName());
+            }
+        }
+
+        if (addedCount > 0) {
+            log.info("Successfully added {} new default incident categories.", addedCount);
+        } else {
+            log.info("All default incident categories already exist in the database.");
+        }
+    }
+
     private EmergencyAuthority createAuthority(String code, String name, String police, String ambulance, String general) {
         EmergencyAuthority authority = new EmergencyAuthority();
         authority.setCountryCode(code);
@@ -148,5 +175,13 @@ public class DataInitializer implements ApplicationListener<ApplicationReadyEven
         authority.setAmbulanceNumber(ambulance);
         authority.setGeneralEmergencyNumber(general);
         return authority;
+    }
+
+    private IncidentCategory createIncidentCategory(String name , int severityWeight, String description){
+        IncidentCategory category = new IncidentCategory();
+        category.setName(name);
+        category.setSeverityWeight(severityWeight);
+        category.setDescription(description);
+        return category;
     }
 }
