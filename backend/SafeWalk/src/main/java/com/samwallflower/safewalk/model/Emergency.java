@@ -49,6 +49,11 @@ public class Emergency {
     @Column(nullable = false, updatable = false)
     private LocalDateTime triggerTimestamp;
 
+    @Column(nullable = false)
+    private Boolean resolved = false;
+
+    private LocalDateTime resolvedAt;
+
     @PrePersist
     protected void onCreate(){
         this.triggerTimestamp = LocalDateTime.now();

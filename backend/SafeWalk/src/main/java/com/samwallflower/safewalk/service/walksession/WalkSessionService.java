@@ -241,31 +241,6 @@ public class WalkSessionService implements IWalkSessionService {
         return modelMapper.map(walkSession, WalkSessionDto.class);
     }
 
-    // to be called when the user ensures their safety for idle warning
-
-    @Override
-    @Transactional
-    public WalkSessionDto resolveIdleWarning(Long id, Long userId) {
-        WalkSession session = walkSessionRepository.findById(id)
-                .orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id: "+ id));
-
-        if(!session.getUser().getId().equals(userId))
-            throw new ResourceProcessingException("WalkSession with id: "+ id + " does not belong to user with id: "+ userId);
-
-        if (session.getStatus() == SessionStatus.COMPLETED)
-            throw new ResourceProcessingException("WalkSession with id: "+ id + " has already ended");
-
-        if (session.getStatus() == SessionStatus.EMERGENCY)
-            throw new ResourceProcessingException(
-                    "WalkSession already escalated to emergency — acknowledgment came too late for id: " + id);
-
-
-        session.setStatus(SessionStatus.ACTIVE);
-        session.setAlarmTriggered(false);
-        session.setLastLocationUpdate(LocalDateTime.now());
-        WalkSession saved = walkSessionRepository.save(session);
-        return convertToDto(saved);
-    }
 
     private SessionStatus resolveStatus(String status) {
         return switch (status.toLowerCase().trim()){

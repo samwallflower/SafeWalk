@@ -98,10 +98,4 @@ public class WalkSessionController {
         return ResponseEntity.ok(new ApiResponse("WalkSessions found successfully", sessions));
     }
 
-    @PutMapping("/{id}/session/user/{userId}/resolve-idle-warning")
-    public ResponseEntity<ApiResponse> resolveIdleWarning(@PathVariable Long id, @PathVariable Long userId) {
-        WalkSessionDto walkSessionDto = walkSessionService.resolveIdleWarning(id, userId);
-        return ResponseEntity.ok(new ApiResponse("Idle warning resolved successfully", walkSessionDto));
-    }
-
 }

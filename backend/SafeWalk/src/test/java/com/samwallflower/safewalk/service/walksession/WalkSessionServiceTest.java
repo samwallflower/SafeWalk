@@ -475,30 +475,4 @@ class WalkSessionServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
-    @Test
-    void acknowledgeIdleWarning_resetsAlarmAndRefreshesTimestamp() {
-        User user = buildUser(1L);
-        WalkSession session = buildSession(5L, user, buildRoute(10L), SessionStatus.ACTIVE);
-        session.setAlarmTriggered(true);
-        session.setLastLocationUpdate(LocalDateTime.now().minusMinutes(5));
-
-        when(walkSessionRepository.findById(5L)).thenReturn(Optional.of(session));
-        when(walkSessionRepository.save(any(WalkSession.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        service.resolveIdleWarning(5L, 1L);
-
-        assertThat(session.getAlarmTriggered()).isFalse();
-        assertThat(session.getLastLocationUpdate()).isAfter(LocalDateTime.now().minusSeconds(5));
-    }
-
-    @Test
-    void resolveIdleWarning_throws_whenAlreadyEscalatedToEmergency() {
-        User user = buildUser(1L);
-        WalkSession session = buildSession(5L, user, buildRoute(10L), SessionStatus.EMERGENCY);
-
-        when(walkSessionRepository.findById(5L)).thenReturn(Optional.of(session));
-
-        assertThatThrownBy(() -> service.resolveIdleWarning(5L, 1L))
-                .isInstanceOf(ResourceProcessingException.class);
-    }
 }

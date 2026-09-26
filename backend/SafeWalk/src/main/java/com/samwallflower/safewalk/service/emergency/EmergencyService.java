@@ -24,7 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
@@ -95,9 +97,99 @@ public class EmergencyService implements IEmergencyService{
                 .toList();
     }
 
+    /**
+     * i feel like there might be sth fundamentally wrong with this method
+     * 1. we are fetching the latest unresolved emergency and resolving that one.
+     * so basically we are guessing this might be the emergency that the user might want to resolve
+     * instead of solid proof
+     * it might make sense in a way that when a session is in emergency status the anomaly detection will no longer
+     * check it bcz anomaly detection service mainly checks all the sessions that are currently active
+     * However that still does not adequately convince me bcz after route deviation there could eb immediate idle warning or so
+     * so i think this method should be invoked with emergency id like this is the particular emergency the user wants to resolve
+     * Hence, from the frontend the emergency id should be provided how will the frontend know what is the id?
+     * bcz emergencies triggered by system do not have any http endpoint
+     * @param sessionId
+     * @param userId
+     */
+    @Override
+    @Transactional
+    public EmergencyDto resolveEmergency(Long id, Long sessionId, Long userId) {
+        WalkSession session = walkSessionRepository.findById(sessionId)
+                .orElseThrow(()-> new ResourceNotFoundException("Walk session not found with id: " + sessionId));
+
+        Emergency emergency = emergencyRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Emergency not found with id: " + id));
+
+        if(!session.getUser().getId().equals(userId)){
+            throw new ResourceProcessingException("Walk session with id: " + sessionId + " does not belong to the user with id: " + userId);
+        }
+        if(session.getStatus() != SessionStatus.EMERGENCY){
+            throw new ResourceProcessingException("Walk session with id: " + sessionId + " is not in EMERGENCY status.");
+        }
+        if(session.getEmergenciesTriggered().stream().noneMatch(e -> e.getId().equals(id))){
+            throw new ResourceProcessingException("Emergency with id: " + id + " does not belong to the walk session with id: " + sessionId);
+        }
+
+        session.setStatus(SessionStatus.ACTIVE);
+        session.setAlarmTriggered(false);
+        session.setLastLocationUpdate(LocalDateTime.now());
+        walkSessionRepository.save(session);
+
+        emergency.setResolved(true);
+        emergency.setResolvedAt(LocalDateTime.now());
+
+        notifyContactsOfResolution(session);
+        notificationService.pushEmergencyAlert(sessionId,
+                new AlertMessage(sessionId, AlertMessageType.EMERGENCY_RESOLVED,
+                        "Emergency resolved - user confirmed they are safe."));
+
+        return convertToDto(emergencyRepository.save(emergency));
+    }
+
+    private void notifyContactsOfResolution(WalkSession session) {
+        User user = session.getUser();
+        List<EmergencyContact> contacts = user.getEmergencyContacts();
+
+        if(contacts == null || contacts.isEmpty()) return;
+
+        String body = String.format(
+                "Good news! %s %s has confirmed they are safe. The emergency situation has been resolved.",
+                user.getFirstName(), user.getLastName()
+        );
+
+        for (EmergencyContact contact : contacts) {
+            if(contact.getContactEmail() != null && !contact.getContactEmail().isEmpty()) {
+                try {
+                    emailService.sendEmail(contact.getContactEmail(), "Emergency Resolved", body);
+                    log.info("Emergency resolution email sent to contact {} for session {}", contact.getId(), session.getId());
+                } catch (ResourceProcessingException e) {
+                    log.error("Failed to send resolution email to contact {} for session {}: {}",
+                            contact.getId(), session.getId(), e.getMessage());
+                }
+            }
+            if(contact.getContactPhone() != null && !contact.getContactPhone().isEmpty()) {
+                try {
+                    twilioClient.sendSms(contact.getContactPhone(), body);
+                    log.info("Emergency resolution SMS sent to contact {} for session {}", contact.getId(), session.getId());
+                } catch (ResourceProcessingException e) {
+                    log.error("Failed to send resolution SMS to contact {} for session {}: {}",
+                            contact.getId(), session.getId(), e.getMessage());
+                }
+            }
+        }
+
+    }
+
     @Override
     public EmergencyDto convertToDto(Emergency emergency) {
         return modelMapper.map(emergency, EmergencyDto.class);
+    }
+
+    @Override
+    public EmergencyDto getEmergencyById(Long id) {
+        return emergencyRepository.findById(id)
+                .map(this::convertToDto)
+                .orElseThrow(() -> new ResourceNotFoundException("Emergency not found with id: " + id));
     }
 
     private EmergencyDto executeEmergencyProtocol(WalkSession session, EmergencyTriggerSource source) {

@@ -49,4 +49,15 @@ public class EmergencyController {
         return ResponseEntity.ok(new ApiResponse("Emergencies retrieved successfully for session: " + sessionId, emergencies));
     }
 
+    @GetMapping("/{id}/emergency")
+    public ResponseEntity<ApiResponse> getEmergencyById(@PathVariable Long id) {
+        EmergencyDto emergency = emergencyService.getEmergencyById(id);
+        return ResponseEntity.ok(new ApiResponse("Emergency retrieved successfully", emergency));
+    }
+
+    @PutMapping("/{id}/emergency/session/{sessionId}/user/{userId}/resolve")
+    public ResponseEntity<ApiResponse> resolveEmergency(@PathVariable Long id, @PathVariable Long sessionId, @PathVariable Long userId) {
+        EmergencyDto emergency = emergencyService.resolveEmergency(id, sessionId, userId);
+        return ResponseEntity.ok(new ApiResponse("Emergency resolved successfully", emergency));
+    }
 }

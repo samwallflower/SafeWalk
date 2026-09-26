@@ -24,5 +24,4 @@ public interface IWalkSessionService {
     WalkSessionDto getWalkSessionByRouteIdAndUserId(Long routeId, Long userId);
     WalkSessionDto convertToDto(WalkSession walkSession);
 
-    WalkSessionDto resolveIdleWarning(Long id, Long userId);
 }
