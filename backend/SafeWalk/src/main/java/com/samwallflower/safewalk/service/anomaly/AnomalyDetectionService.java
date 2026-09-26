@@ -64,6 +64,10 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
     @Transactional
     public void checkAllActiveSessions() {
         List<WalkSession> activeSessions = walkSessionRepository.findByStatus(SessionStatus.ACTIVE);
+        if(activeSessions.isEmpty()){
+            log.debug("No active sessions found for anomaly detection");
+            return;
+        }
         log.debug("Running anomaly detection on {} active sessions", activeSessions.size());
 
         for(WalkSession session : activeSessions) {
