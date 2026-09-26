@@ -17,16 +17,17 @@ import com.samwallflower.safewalk.repository.WalkSessionRepository;
 import com.samwallflower.safewalk.service.email.EmailService;
 import com.samwallflower.safewalk.service.emergencyauthority.IEmergencyAuthorityService;
 import com.samwallflower.safewalk.service.notification.INotificationService;
+import com.samwallflower.safewalk.websocket.connection.WalkSessionConnectionRegistry;
 import com.samwallflower.safewalk.websocket.message.AlertMessage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
@@ -39,6 +40,7 @@ public class EmergencyService implements IEmergencyService{
     private final INotificationService notificationService;
     private final IEmergencyAuthorityService emergencyAuthorityService;
     private final EmailService emailService;
+    private final WalkSessionConnectionRegistry walkSessionConnectionRegistry;
     private final ModelMapper modelMapper;
 
 
@@ -98,16 +100,7 @@ public class EmergencyService implements IEmergencyService{
     }
 
     /**
-     * i feel like there might be sth fundamentally wrong with this method
-     * 1. we are fetching the latest unresolved emergency and resolving that one.
-     * so basically we are guessing this might be the emergency that the user might want to resolve
-     * instead of solid proof
-     * it might make sense in a way that when a session is in emergency status the anomaly detection will no longer
-     * check it bcz anomaly detection service mainly checks all the sessions that are currently active
-     * However that still does not adequately convince me bcz after route deviation there could eb immediate idle warning or so
-     * so i think this method should be invoked with emergency id like this is the particular emergency the user wants to resolve
-     * Hence, from the frontend the emergency id should be provided how will the frontend know what is the id?
-     * bcz emergencies triggered by system do not have any http endpoint
+     *
      * @param sessionId
      * @param userId
      */
@@ -120,30 +113,48 @@ public class EmergencyService implements IEmergencyService{
         Emergency emergency = emergencyRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Emergency not found with id: " + id));
 
+        if(emergency.getResolved())
+            throw new ResourceProcessingException("Emergency with id: " + id + " is already resolved.");
+
         if(!session.getUser().getId().equals(userId)){
             throw new ResourceProcessingException("Walk session with id: " + sessionId + " does not belong to the user with id: " + userId);
         }
         if(session.getStatus() != SessionStatus.EMERGENCY){
             throw new ResourceProcessingException("Walk session with id: " + sessionId + " is not in EMERGENCY status.");
         }
-        if(session.getEmergenciesTriggered().stream().noneMatch(e -> e.getId().equals(id))){
+        if(!emergency.getWalkSession().getId().equals(sessionId)){
             throw new ResourceProcessingException("Emergency with id: " + id + " does not belong to the walk session with id: " + sessionId);
         }
 
+
         session.setStatus(SessionStatus.ACTIVE);
-        session.setAlarmTriggered(false);
+
+        switch (emergency.getTriggerSource()) {
+            case IDLE_TIMEOUT->
+                session.setAlarmTriggered(false);
+            case ROUTE_DEVIATION->{
+                session.setDeviationTriggered(false);
+                session.setDeviationTriggeredAt(null);
+            }
+            case CONNECTION_LOST->
+                walkSessionConnectionRegistry.clearDisconnect(sessionId);
+        }
+
+
         session.setLastLocationUpdate(LocalDateTime.now());
         walkSessionRepository.save(session);
 
         emergency.setResolved(true);
         emergency.setResolvedAt(LocalDateTime.now());
+        Emergency saved = emergencyRepository.save(emergency);
+
 
         notifyContactsOfResolution(session);
         notificationService.pushEmergencyAlert(sessionId,
-                new AlertMessage(sessionId, AlertMessageType.EMERGENCY_RESOLVED,
-                        "Emergency resolved - user confirmed they are safe."));
+                new AlertMessage(sessionId, saved.getId(),AlertMessageType.EMERGENCY_RESOLVED,
+                        "Emergency with id: "+ saved.getId()+" and type: "+ saved.getTriggerSource()+" resolved - user confirmed they are safe."));
 
-        return convertToDto(emergencyRepository.save(emergency));
+        return convertToDto(saved);
     }
 
     private void notifyContactsOfResolution(WalkSession session) {
@@ -192,6 +203,14 @@ public class EmergencyService implements IEmergencyService{
                 .orElseThrow(() -> new ResourceNotFoundException("Emergency not found with id: " + id));
     }
 
+    @Override
+    public EmergencyDto getActiveEmergencyByWalkSessionId(Long sessionId) {
+        return emergencyRepository.findByWalkSessionIdAndResolved(sessionId, false).stream()
+                .findFirst()
+                .map(this::convertToDto)
+                .orElseThrow(() -> new ResourceNotFoundException("No active emergency found for walk session with id: " + sessionId));
+    }
+
     private EmergencyDto executeEmergencyProtocol(WalkSession session, EmergencyTriggerSource source) {
         if (session.getStatus()== SessionStatus.EMERGENCY){
             log.info("Session {} is already in EMERGENCY status - skipping duplicate trigger", session.getId());
@@ -205,6 +224,33 @@ public class EmergencyService implements IEmergencyService{
         walkSessionRepository.save(session);
 
         User user = session.getUser();
+        List<EmergencyContact> notifiedContacts = notifyEmergencyContacts(session, user);
+
+        Emergency emergency = createEmergency(session, source);
+        emergency.setNotifiedEmergencyContacts(notifiedContacts);
+
+        Emergency saved = emergencyRepository.save(emergency);
+        log.info("Emergency record saved with id {} for session {}", saved.getId(), session.getId());
+
+
+        AlertMessage alert = new AlertMessage(
+                session.getId(),
+                saved.getId(),
+                AlertMessageType.EMERGENCY_TRIGGERED,
+                "Emergency protocol activated for this session with id:" + session.getId()
+                + "for : " + saved.getTriggerSource()
+        );
+        // sending notification to user via websocket
+        notificationService.pushEmergencyAlert(session.getId(), alert);
+
+        log.info("Emergency protocol executed for session {}, {} of {} contacts notified", session.getId(),
+                notifiedContacts.size(), session.getUser().getEmergencyContacts()!=null ? session.getUser().getEmergencyContacts().size() : 0);
+        
+
+        return convertToDto(saved);
+    }
+
+    private List<EmergencyContact> notifyEmergencyContacts(WalkSession session, User user) {
         List<EmergencyContact> contacts = user.getEmergencyContacts();
         List<EmergencyContact> notifiedContacts = new ArrayList<>();
 
@@ -230,17 +276,6 @@ public class EmergencyService implements IEmergencyService{
                 boolean smsSucceeded = false;
                 boolean emailSucceeded = false;
 
-                // SMS sending
-                if (emergencyContact.getContactPhone() != null && !emergencyContact.getContactPhone().isEmpty()) {
-                    try {
-                        twilioClient.sendSms(emergencyContact.getContactPhone(), plainBody);
-                        smsSucceeded = true;
-                        log.info("Emergency SMS sent to contact {} for session {}", emergencyContact.getId(), session.getId());
-                    } catch (ResourceProcessingException e) {
-                        log.error("Failed to send SMS to contact {} for session {}: {}",
-                                emergencyContact.getId(), session.getId(), e.getMessage());
-                    }
-                }
                 // Email sending
                 if (emergencyContact.getContactEmail() != null && !emergencyContact.getContactEmail().isEmpty()) {
                     try {
@@ -254,28 +289,25 @@ public class EmergencyService implements IEmergencyService{
                     }
                 }
 
+                // SMS sending
+                if (emergencyContact.getContactPhone() != null && !emergencyContact.getContactPhone().isEmpty()) {
+                    try {
+                        twilioClient.sendSms(emergencyContact.getContactPhone(), plainBody);
+                        smsSucceeded = true;
+                        log.info("Emergency SMS sent to contact {} for session {}", emergencyContact.getId(), session.getId());
+                    } catch (ResourceProcessingException e) {
+                        log.error("Failed to send SMS to contact {} for session {}: {}",
+                                emergencyContact.getId(), session.getId(), e.getMessage());
+                    }
+                }
+
+
                 if(smsSucceeded || emailSucceeded){
                     notifiedContacts.add(emergencyContact);
                 }
             }
         }
-
-        Emergency emergency = createEmergency(session, source);
-        emergency.setNotifiedEmergencyContacts(notifiedContacts);
-
-        AlertMessage alert = new AlertMessage(
-                session.getId(),
-                AlertMessageType.EMERGENCY_TRIGGERED,
-                "Emergency protocol activated for this session."
-        );
-        // sending notification to user via websocket
-        notificationService.pushEmergencyAlert(session.getId(), alert);
-
-        log.info("Emergency protocol executed for session {}, {} of {} contacts notified", session.getId(),
-                notifiedContacts.size(), session.getUser().getEmergencyContacts()!=null ? session.getUser().getEmergencyContacts().size() : 0);
-
-
-        return convertToDto(emergencyRepository.save(emergency));
+        return notifiedContacts;
     }
 
     private String buildEmergencyEmailHtml(User user, String trackingLink, String authorityLine) {

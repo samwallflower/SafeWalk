@@ -14,6 +14,7 @@ import com.samwallflower.safewalk.repository.WalkSessionRepository;
 import com.samwallflower.safewalk.service.email.EmailService;
 import com.samwallflower.safewalk.service.emergencyauthority.IEmergencyAuthorityService;
 import com.samwallflower.safewalk.service.notification.INotificationService;
+import com.samwallflower.safewalk.websocket.connection.WalkSessionConnectionRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +38,7 @@ class EmergencyServiceTest {
     @Mock private TwilioClient twilioClient;
     @Mock private INotificationService notificationService;
     @Mock private IEmergencyAuthorityService emergencyAuthorityService;
+    @Mock private WalkSessionConnectionRegistry connectionRegistry;
     @Mock private EmailService emailService;
 
     private EmergencyService service;
@@ -44,7 +46,7 @@ class EmergencyServiceTest {
     @BeforeEach
     void setUp() {
         service = new EmergencyService(walkSessionRepository, emergencyRepository, twilioClient,
-                notificationService, emergencyAuthorityService, emailService, new ModelMapper());
+                notificationService, emergencyAuthorityService, emailService, connectionRegistry, new ModelMapper());
 
         lenient().when(emergencyAuthorityService.findEmergencyAuthorityByLocation(anyDouble(), anyDouble()))
                 .thenReturn(buildAuthorityDto());

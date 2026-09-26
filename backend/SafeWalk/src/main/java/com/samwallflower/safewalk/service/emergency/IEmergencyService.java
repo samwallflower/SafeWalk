@@ -27,4 +27,6 @@ public interface IEmergencyService {
     EmergencyDto convertToDto(Emergency emergency);
 
     EmergencyDto getEmergencyById(Long id);
+
+    EmergencyDto getActiveEmergencyByWalkSessionId(Long sessionId);
 }

@@ -52,6 +52,9 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
     @Value("${app.anomaly.ws-timeout-seconds}")
     private long wsTimeoutSeconds;
 
+    @Value("${app.anomaly.deviation-grace-period-seconds}")
+    private long deviationGracePeriodSeconds;
+
 
     // so for all active session we are checking for anomalies
     // check idle time out - if we get no location update for a set amount of time
@@ -191,12 +194,31 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
 
         }
 
-        if(minDistance > deviationEmergencyThresholdMeters){
-            log.warn("Session {} deviated {}m from route - triggering emergency", session.getId(), minDistance);
-            emergencyService.triggerEmergencySystem(session.getId(), EmergencyTriggerSource.ROUTE_DEVIATION);
-        } else if (minDistance > deviationWarningThresholdMeters) {
-            notificationService.pushRouteDeviationWarning(session.getId());
+
+        if(minDistance <= deviationWarningThresholdMeters){
+            if(Boolean.TRUE.equals(session.getDeviationTriggered())){
+                session.setDeviationTriggered(false);
+                session.setDeviationTriggeredAt(null);
+                walkSessionRepository.save(session);
+                log.info("Session {} returned to route - deviation cleared", session.getId());
+            }
+            return;
         }
+
+        if(!Boolean.TRUE.equals(session.getDeviationTriggered())){
+            session.setDeviationTriggered(true);
+            session.setDeviationTriggeredAt(LocalDateTime.now());
+            walkSessionRepository.save(session);
+            notificationService.pushRouteDeviationWarning(session.getId());
+            log.info("Session {} deviated from route - deviation triggered", session.getId());
+        }else{
+            long secondsSinceDeviation = SECONDS.between(session.getDeviationTriggeredAt(), LocalDateTime.now());
+            if(minDistance > deviationEmergencyThresholdMeters && secondsSinceDeviation > deviationGracePeriodSeconds){
+                log.warn("Session {} deviated {}m from route for {} seconds - triggering emergency", session.getId(), minDistance, secondsSinceDeviation);
+                emergencyService.triggerEmergencySystem(session.getId(), EmergencyTriggerSource.ROUTE_DEVIATION);
+            }
+        }
+
 
     }
 

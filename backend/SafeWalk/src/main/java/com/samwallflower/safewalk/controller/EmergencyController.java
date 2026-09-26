@@ -60,4 +60,10 @@ public class EmergencyController {
         EmergencyDto emergency = emergencyService.resolveEmergency(id, sessionId, userId);
         return ResponseEntity.ok(new ApiResponse("Emergency resolved successfully", emergency));
     }
+
+    @GetMapping("/session/{sessionId}/active")
+    public ResponseEntity<ApiResponse> getActiveEmergencyByWalkSessionId(@PathVariable Long sessionId) {
+        EmergencyDto emergency = emergencyService.getActiveEmergencyByWalkSessionId(sessionId);
+        return ResponseEntity.ok(new ApiResponse("Active emergency retrieved successfully", emergency));
+    }
 }

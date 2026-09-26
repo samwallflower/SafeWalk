@@ -56,6 +56,9 @@ public class WalkSession {
     private Boolean alarmTriggered = false;
     private Boolean autoCompleted = false;
 
+    private Boolean deviationTriggered = false;
+    private LocalDateTime deviationTriggeredAt;
+
 
 
     public WalkSession(Double originLatitude, Double originLongitude, Double destinationLatitude, Double destinationLongitude) {
