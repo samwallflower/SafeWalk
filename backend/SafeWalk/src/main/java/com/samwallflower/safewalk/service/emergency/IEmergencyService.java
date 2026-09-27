@@ -4,7 +4,6 @@ package com.samwallflower.safewalk.service.emergency;
 import com.samwallflower.safewalk.dto.EmergencyDto;
 import com.samwallflower.safewalk.enums.EmergencyTriggerSource;
 import com.samwallflower.safewalk.model.Emergency;
-import com.samwallflower.safewalk.request.emergency.UpdateEmergencyRequest;
 
 import java.util.List;
 
@@ -32,7 +31,7 @@ public interface IEmergencyService {
     EmergencyDto getActiveEmergencyByWalkSessionId(Long sessionId);
     long countEmergencyByTriggerSource(String source);
 
-    EmergencyDto updateEmergencyById(Long id, UpdateEmergencyRequest request);
+    EmergencyDto updateEmergencyResolveById(Long id,Boolean resolved );
 
     void deleteEmergencyById(Long id);
 }

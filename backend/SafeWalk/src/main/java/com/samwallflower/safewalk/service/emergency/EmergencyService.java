@@ -14,7 +14,6 @@ import com.samwallflower.safewalk.model.User;
 import com.samwallflower.safewalk.model.WalkSession;
 import com.samwallflower.safewalk.repository.EmergencyRepository;
 import com.samwallflower.safewalk.repository.WalkSessionRepository;
-import com.samwallflower.safewalk.request.emergency.UpdateEmergencyRequest;
 import com.samwallflower.safewalk.service.email.EmailService;
 import com.samwallflower.safewalk.service.emergencyauthority.IEmergencyAuthorityService;
 import com.samwallflower.safewalk.service.notification.INotificationService;
@@ -30,7 +29,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -223,11 +221,11 @@ public class EmergencyService implements IEmergencyService{
 
     @Override
     @Transactional
-    public EmergencyDto updateEmergencyById(Long id, UpdateEmergencyRequest request) {
+    public EmergencyDto updateEmergencyResolveById(Long id, Boolean resolved) {
         return emergencyRepository.findById(id)
                 .map(emergency -> {
-                    Optional.ofNullable(request.getResolved()).ifPresent(emergency::setResolved);
-                    Optional.ofNullable(request.getResolvedAt()).ifPresent(emergency::setResolvedAt);
+                    emergency.setResolved(resolved);
+                    emergency.setResolvedAt(LocalDateTime.now());
                     Emergency updated = emergencyRepository.save(emergency);
                     return convertToDto(updated);
                 })
