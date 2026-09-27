@@ -86,8 +86,8 @@ public class EmergencyService implements IEmergencyService{
     }
 
     @Override
-    public List<EmergencyDto> getAllEmergenciesByTriggerSource(EmergencyTriggerSource source) {
-        return emergencyRepository.findByTriggerSource(source).stream()
+    public List<EmergencyDto> getAllEmergenciesByTriggerSource(String source) {
+        return emergencyRepository.findByTriggerSource(resolveTriggerSource(source)).stream()
                 .map(this::convertToDto)
                 .toList();
     }
@@ -209,6 +209,11 @@ public class EmergencyService implements IEmergencyService{
                 .findFirst()
                 .map(this::convertToDto)
                 .orElseThrow(() -> new ResourceNotFoundException("No active emergency found for walk session with id: " + sessionId));
+    }
+
+    @Override
+    public long countEmergencyByTriggerSource(String source) {
+        return emergencyRepository.countByTriggerSource(resolveTriggerSource(source));
     }
 
     private EmergencyDto executeEmergencyProtocol(WalkSession session, EmergencyTriggerSource source) {

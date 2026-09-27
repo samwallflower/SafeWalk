@@ -38,7 +38,7 @@ public class EmergencyController {
     }
 
     @GetMapping("/by-trigger-source")
-    public ResponseEntity<ApiResponse> getAllEmergenciesByTriggerSource(@RequestParam EmergencyTriggerSource source) {
+    public ResponseEntity<ApiResponse> getAllEmergenciesByTriggerSource(@RequestParam String source) {
         List<EmergencyDto> emergencies = emergencyService.getAllEmergenciesByTriggerSource(source);
         return ResponseEntity.ok(new ApiResponse("Emergencies retrieved successfully for source: " + source, emergencies));
     }
@@ -65,5 +65,11 @@ public class EmergencyController {
     public ResponseEntity<ApiResponse> getActiveEmergencyByWalkSessionId(@PathVariable Long sessionId) {
         EmergencyDto emergency = emergencyService.getActiveEmergencyByWalkSessionId(sessionId);
         return ResponseEntity.ok(new ApiResponse("Active emergency retrieved successfully", emergency));
+    }
+
+    @GetMapping("/count-by-trigger-source")
+    public ResponseEntity<ApiResponse> countEmergencyByTriggerSource(@RequestParam String source) {
+        long count = emergencyService.countEmergencyByTriggerSource(source);
+        return ResponseEntity.ok(new ApiResponse("Count of emergencies retrieved successfully for source: " + source, count));
     }
 }
