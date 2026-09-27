@@ -7,8 +7,9 @@ import com.samwallflower.safewalk.model.Role;
 import com.samwallflower.safewalk.model.User;
 import com.samwallflower.safewalk.repository.RoleRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
-import com.samwallflower.safewalk.request.auth.UserRegisterRequest;
+import com.samwallflower.safewalk.request.user.UserRegisterRequest;
 import com.samwallflower.safewalk.request.user.UserUpdateRequest;
+import com.samwallflower.safewalk.service.auth.AuthVerificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,13 +33,16 @@ class UserServiceTest {
 
     @Mock private UserRepository userRepository;
     @Mock private RoleRepository roleRepository;
+    @Mock private  PasswordEncoder passwordEncoder;
+    @Mock private  AuthVerificationService authVerificationService;
+    @Mock private  ModelMapper modelMapper;
 
     @InjectMocks
     private UserService service;
 
     @BeforeEach
     void setUp() {
-        service = new UserService(userRepository, roleRepository, new ModelMapper());
+        service = new UserService(userRepository, roleRepository, passwordEncoder,authVerificationService,new ModelMapper());
     }
 
     private User buildUser(Long id, String email, String firstName, String lastName) {

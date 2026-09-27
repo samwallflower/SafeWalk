@@ -1,4 +1,4 @@
-package com.samwallflower.safewalk.request.auth;
+package com.samwallflower.safewalk.request.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

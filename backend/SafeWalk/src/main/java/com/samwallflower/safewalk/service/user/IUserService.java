@@ -2,7 +2,7 @@ package com.samwallflower.safewalk.service.user;
 
 import com.samwallflower.safewalk.dto.UserDto;
 import com.samwallflower.safewalk.model.User;
-import com.samwallflower.safewalk.request.auth.UserRegisterRequest;
+import com.samwallflower.safewalk.request.user.UserRegisterRequest;
 import com.samwallflower.safewalk.request.user.UserUpdateRequest;
 
 import java.util.List;
@@ -16,4 +16,5 @@ public interface IUserService {
     User getUserByEmail(String email);
 
     List<UserDto> getAllUsers();
+    User getAuthenticatedUser();
 }

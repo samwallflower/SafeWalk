@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.samwallflower.safewalk.dto.UserDto;
 import com.samwallflower.safewalk.exception.ResourceAlreadyExistsException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
-import com.samwallflower.safewalk.request.auth.UserRegisterRequest;
+import com.samwallflower.safewalk.request.user.UserRegisterRequest;
 import com.samwallflower.safewalk.request.user.UserUpdateRequest;
 import com.samwallflower.safewalk.service.user.IUserService;
 import org.junit.jupiter.api.Test;

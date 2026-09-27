@@ -1,7 +1,7 @@
 package com.samwallflower.safewalk.controller;
 
 import com.samwallflower.safewalk.dto.UserDto;
-import com.samwallflower.safewalk.request.auth.UserRegisterRequest;
+import com.samwallflower.safewalk.request.user.UserRegisterRequest;
 import com.samwallflower.safewalk.request.user.UserUpdateRequest;
 import com.samwallflower.safewalk.response.ApiResponse;
 import com.samwallflower.safewalk.service.user.IUserService;
@@ -9,11 +9,16 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@EnableMethodSecurity
+@EnableWebSecurity
 @Validated
 @RequiredArgsConstructor
 @RestController
@@ -27,6 +32,7 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponse("User retrieved successfully", userDto));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_USER,ROLE_ADMIN')")
     @PostMapping("{userId}/phoneNumber")
     public ResponseEntity<ApiResponse> setPhoneNumber(@PathVariable Long userId,
                                                       @RequestParam
@@ -48,12 +54,14 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponse("User created successfully", createdUser));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_USER,ROLE_ADMIN')")
     @DeleteMapping("/{userId}/delete")
     public ResponseEntity<ApiResponse> deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
         return ResponseEntity.ok(new ApiResponse("User deleted successfully", null));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_USER,ROLE_ADMIN')")
     @PutMapping("/{userId}/update")
     public ResponseEntity<ApiResponse> updateUser(@PathVariable Long userId, @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
         UserDto updatedUser = userService.updateUser(userId, userUpdateRequest);

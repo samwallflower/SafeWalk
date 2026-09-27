@@ -7,10 +7,14 @@ import com.samwallflower.safewalk.model.Role;
 import com.samwallflower.safewalk.model.User;
 import com.samwallflower.safewalk.repository.RoleRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
-import com.samwallflower.safewalk.request.auth.UserRegisterRequest;
+import com.samwallflower.safewalk.request.user.UserRegisterRequest;
 import com.samwallflower.safewalk.request.user.UserUpdateRequest;
+import com.samwallflower.safewalk.service.auth.AuthVerificationService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +26,8 @@ import java.util.Set;
 public class UserService implements IUserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthVerificationService authVerificationService;
     private final ModelMapper modelMapper;
 
     @Override
@@ -42,9 +48,11 @@ public class UserService implements IUserService {
                     newUser.setFirstName(req.getFirstName());
                     newUser.setLastName(req.getLastName());
                     newUser.setEmail(req.getEmail());
-                    newUser.setPassword(req.getPassword()); // TODO: hash the password
+                    newUser.setPassword(passwordEncoder.encode(req.getPassword()));
                     newUser.setRoles(Set.of(role));
-                    return convertToDto(userRepository.save(newUser));
+                    User saved = userRepository.save(newUser);
+                    authVerificationService.sendVerificationCode(saved);
+                    return convertToDto(saved);
                 })
                 .orElseThrow(() -> new ResourceAlreadyExistsException("User with email " + user.getEmail() + " already exists."));
 
@@ -94,6 +102,14 @@ public class UserService implements IUserService {
         return userRepository.findAll().stream()
                 .map(this::convertToDto)
                 .toList();
+    }
+
+    @Override
+    public User getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
     }
 
     private UserDto convertToDto(User user) {
