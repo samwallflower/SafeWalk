@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,28 +23,28 @@ import java.util.List;
 public class EmergencyAuthorityController {
     private final IEmergencyAuthorityService emergencyAuthorityService;
 
-    //TODO: Add Admin restriction later
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/add")
     public ResponseEntity<ApiResponse> addEmergencyAuthority(@Valid @RequestBody AddEmergencyAuthorityRequest request){
         EmergencyAuthorityDto emergencyAuthorityDto = emergencyAuthorityService.addEmergencyAuthority(request);
         return ResponseEntity.ok(new ApiResponse("Emergency authority added successfully.", emergencyAuthorityDto));
     }
 
-    //TODO:ADMIN only
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/update")
     public ResponseEntity<ApiResponse> updateEmergencyAuthority(@PathVariable Long id , @Valid @RequestBody UpdateEmergencyAuthorityRequest request){
         EmergencyAuthorityDto updated = emergencyAuthorityService.updateEmergencyAuthority(id, request);
         return ResponseEntity.ok(new ApiResponse("Emergency authority updated successfully.", updated));
     }
 
-    //TODO:ADMIN only
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}/delete")
     public ResponseEntity<ApiResponse> deleteEmergencyAuthority(@PathVariable Long id){
         emergencyAuthorityService.deleteEmergencyAuthority(id);
         return ResponseEntity.ok(new ApiResponse("Emergency authority deleted successfully.", null));
     }
 
-    //TODO: ADMIN only
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/authority/by-country-name/delete")
     public ResponseEntity<ApiResponse> deleteEmergencyAuthorityByCountryName(@RequestParam @NotBlank String countryName){
         emergencyAuthorityService.deleteEmergencyAuthorityByCountryName(countryName);

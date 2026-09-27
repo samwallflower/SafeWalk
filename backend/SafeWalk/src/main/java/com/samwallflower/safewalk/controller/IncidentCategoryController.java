@@ -8,6 +8,7 @@ import com.samwallflower.safewalk.service.incidentcategory.IIncidentCategoryServ
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,42 +19,49 @@ import java.util.List;
 public class IncidentCategoryController {
     private final IIncidentCategoryService incidentCategoryService;
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/all")
     public ResponseEntity<ApiResponse> getAllIncidentCategories() {
         List<IncidentCategoryDto> incidentCategories = incidentCategoryService.getAllIncidentCategories();
         return ResponseEntity.ok(new ApiResponse("Incident categories retrieved successfully", incidentCategories));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/{id}/category")
     public ResponseEntity<ApiResponse> getIncidentCategoryById(@PathVariable Long id) {
         IncidentCategoryDto incidentCategory = incidentCategoryService.getIncidentCategoryById(id);
         return ResponseEntity.ok(new ApiResponse("Incident category retrieved successfully", incidentCategory));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/by-name/category")
     public ResponseEntity<ApiResponse> getIncidentCategoryByName(@RequestParam String name) {
         IncidentCategoryDto incidentCategory = incidentCategoryService.getIncidentCategoryByName(name);
         return ResponseEntity.ok(new ApiResponse("Incident category retrieved successfully", incidentCategory));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/add")
     public ResponseEntity<ApiResponse> addIncidentCategory(@Valid @RequestBody AddIncidentCategoryRequest incidentCategoryDto) {
         IncidentCategoryDto createdIncidentCategory = incidentCategoryService.addIncidentCategory(incidentCategoryDto);
         return ResponseEntity.ok(new ApiResponse("Incident category added successfully", createdIncidentCategory));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/update")
     public ResponseEntity<ApiResponse> updateIncidentCategory(@PathVariable Long id, @Valid @RequestBody UpdateIncidentCategoryRequest incidentCategoryDto) {
         IncidentCategoryDto updatedIncidentCategory = incidentCategoryService.updateIncidentCategory(id, incidentCategoryDto);
         return ResponseEntity.ok(new ApiResponse("Incident category updated successfully", updatedIncidentCategory));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}/delete")
     public ResponseEntity<ApiResponse> deleteIncidentCategory(@PathVariable Long id) {
         incidentCategoryService.deleteIncidentCategoryById(id);
         return ResponseEntity.ok(new ApiResponse("Incident category deleted successfully", null));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/by-severity-weight/category")
     public ResponseEntity<ApiResponse> getIncidentCategoryBySeverity(@RequestParam Integer severity) {
         List<IncidentCategoryDto> incidentCategories = incidentCategoryService.getIncidentCategoryBySeverity(severity);

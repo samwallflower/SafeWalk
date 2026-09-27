@@ -17,6 +17,7 @@ import com.samwallflower.safewalk.request.incidentreport.AddIncidentReportReques
 import com.samwallflower.safewalk.request.incidentreport.UpdateIncidentReportRequest;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -36,8 +37,10 @@ public class IncidentReportService implements IIncidentReportService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
+    @Value("${app.incident.add.report-time-limit-in-mins}")
+    private int report_add_time_limit_in_mins;
+
     // Rate Limiter -> one person can only add a report every 5 minutes
-    // TODO: change the minutes limit to a final variable
     @Override
     public IncidentReportDto addIncidentReport(AddIncidentReportRequest request, Long userId) {
         IncidentCategory category = categoryRepository.findByNameIgnoreCase(request.getCategory().getName())
@@ -49,7 +52,7 @@ public class IncidentReportService implements IIncidentReportService {
         incidentReportRepository.findTopByUserIdOrderByTimestampDesc(userId)
                 .ifPresent(lastReport -> {
                     long minutesSinceLastReport = MINUTES.between(lastReport.getTimestamp(), LocalDateTime.now());
-                    if (minutesSinceLastReport < 5) {
+                    if (minutesSinceLastReport < report_add_time_limit_in_mins) {
                         long minutesToWait = 5 - minutesSinceLastReport;
                         throw new RateLimitExceededException("Rate limit exceeded. Please wait " + minutesToWait + " more minutes before submitting another report.");
                     }

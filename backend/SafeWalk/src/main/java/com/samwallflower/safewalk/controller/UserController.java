@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@EnableMethodSecurity
-@EnableWebSecurity
 @Validated
 @RequiredArgsConstructor
 @RestController
@@ -26,13 +24,14 @@ import java.util.List;
 public class UserController {
     private final IUserService userService;
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/{userId}/user")
     public ResponseEntity<ApiResponse> getUserById(@PathVariable Long userId) {
         UserDto userDto = userService.getUserById(userId);
         return ResponseEntity.ok(new ApiResponse("User retrieved successfully", userDto));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_USER,ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @PostMapping("{userId}/phoneNumber")
     public ResponseEntity<ApiResponse> setPhoneNumber(@PathVariable Long userId,
                                                       @RequestParam
@@ -42,6 +41,7 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponse("Phone number updated successfully", userDto));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
     public ResponseEntity<ApiResponse> getAllUsers() {
         List<UserDto> userDtos = userService.getAllUsers();
@@ -54,14 +54,14 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponse("User created successfully", createdUser));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_USER,ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @DeleteMapping("/{userId}/delete")
     public ResponseEntity<ApiResponse> deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
         return ResponseEntity.ok(new ApiResponse("User deleted successfully", null));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_USER,ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @PutMapping("/{userId}/update")
     public ResponseEntity<ApiResponse> updateUser(@PathVariable Long userId, @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
         UserDto updatedUser = userService.updateUser(userId, userUpdateRequest);

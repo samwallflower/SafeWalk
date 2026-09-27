@@ -7,6 +7,7 @@ import com.samwallflower.safewalk.service.routing.IRoutingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,12 +30,14 @@ public class RoutingController {
         return ResponseEntity.ok(new ApiResponse("Route found successfully", route));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
     public ResponseEntity<ApiResponse> getAllRoutes(){
         List<RouteDto> routes = routingService.getAllRoutes();
         return ResponseEntity.ok(new ApiResponse("Routes found successfully", routes));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-route-request-id")
     public ResponseEntity<ApiResponse> getRoutesByRouteRequestId(@RequestParam String routeRequestId){
         List<RouteDto> routes = routingService.getRouteByRouteRequestId(routeRequestId);

@@ -9,6 +9,7 @@ import com.samwallflower.safewalk.service.incidentreport.IIncidentReportService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +32,7 @@ public class IncidentReportController {
         return ResponseEntity.ok(new ApiResponse("Incident report retrieved successfully", incidentReport));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/user/{userId}/report")
     public ResponseEntity<ApiResponse> getIncidentReportsByUserId(@PathVariable Long userId) {
         List<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByUserId(userId);
@@ -79,6 +81,7 @@ public class IncidentReportController {
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/{userId}/by-user-id-and-status/report")
     public ResponseEntity<ApiResponse> getIncidentReportsByUserIdAndStatus(@PathVariable Long userId, @RequestParam String status) {
         List<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByUserIdAndStatus(userId, status);
@@ -109,31 +112,35 @@ public class IncidentReportController {
         return ResponseEntity.ok(new ApiResponse("Heat map points retrieved successfully", heatMapPoints));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/status/update")
     public ResponseEntity<ApiResponse> updateStatus(@PathVariable Long id, @RequestParam String status) {
         IncidentReportDto incidentReport = incidentReportService.updateStatus(id, status);
         return ResponseEntity.ok(new ApiResponse("Incident report status updated successfully", incidentReport));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @PutMapping("/{userId}/report/{id}/update")
     public ResponseEntity<ApiResponse> updateIncidentReport(@Valid @RequestBody UpdateIncidentReportRequest request, @PathVariable Long id, @PathVariable Long userId) {
         IncidentReportDto incidentReport = incidentReportService.updateIncidentReport(request, userId, id);
         return ResponseEntity.ok(new ApiResponse("Incident report updated successfully", incidentReport));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @DeleteMapping("/{userId}/report/{id}/delete")
     public ResponseEntity<ApiResponse> deleteIncidentReport(@PathVariable Long id, @PathVariable Long userId) {
         incidentReportService.deleteIncidentReportById(id, userId);
         return ResponseEntity.ok(new ApiResponse("Incident report deleted successfully", null));
     }
 
-    // for admin only
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}/delete")
     public ResponseEntity<ApiResponse> deleteIncidentReportById(@PathVariable Long id) {
         incidentReportService.deleteIncidentReportById(id);
         return ResponseEntity.ok(new ApiResponse("Incident report deleted successfully", null));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @PostMapping("/{userId}/report/add")
     public ResponseEntity<ApiResponse> addIncidentReport(@Valid @RequestBody AddIncidentReportRequest request, @PathVariable Long userId) {
         IncidentReportDto addedIncidentReport = incidentReportService.addIncidentReport(request, userId);
