@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public class DataInitializer implements ApplicationListener<ApplicationReadyEven
      * This class is responsible for initializing data when the application is ready.
      * It implements ApplicationListener to listen for ApplicationReadyEvent.
      */
+    private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final EmergencyContactRepository emergencyContactRepository;
@@ -52,15 +54,16 @@ public class DataInitializer implements ApplicationListener<ApplicationReadyEven
         Role role = roleRepository.findByName("ROLE_USER").orElseThrow(() -> new ResourceNotFoundException("Default role not found"));
         for (int i = 1; i <= 5; i++) {
             String defaultEmail = "user" + i + "@email.com";
-            if(userRepository.findByEmail(defaultEmail).isPresent()){
+            if(userRepository.existsByEmail(defaultEmail)){
                 continue;
             }
             User user = new User();
             user.setEmail(defaultEmail);
             user.setFirstName("The User");
             user.setLastName("user "+ i);
-            user.setPassword("123456");
+            user.setPassword(passwordEncoder.encode("123456"));
             user.setPhoneNumber("1234567890");
+            user.setEnabled(true);
             user.setRoles(Set.of(role));
             User savedUser = userRepository.save(user);
             log.info("Default user created: {} created successfully with email: {}", i, defaultEmail);
@@ -72,14 +75,15 @@ public class DataInitializer implements ApplicationListener<ApplicationReadyEven
         Role role = roleRepository.findByName("ROLE_ADMIN").orElseThrow(() -> new ResourceNotFoundException("Default role not found"));
         for (int i = 1; i <= 2; i++) {
             String defaultEmail = "admin" + i + "@email.com";
-            if(userRepository.findByEmail(defaultEmail).isPresent()){
+            if(userRepository.existsByEmail(defaultEmail)){
                 continue;
             }
             User user = new User();
             user.setEmail(defaultEmail);
             user.setFirstName("The Admin");
             user.setLastName("admin "+ i);
-            user.setPassword("123456");
+            user.setPassword(passwordEncoder.encode("123456"));
+            user.setEnabled(true);
             user.setRoles(Set.of(role));
             userRepository.save(user);
             log.info("Default admin created: {} created successfully with email: {}", i, defaultEmail);

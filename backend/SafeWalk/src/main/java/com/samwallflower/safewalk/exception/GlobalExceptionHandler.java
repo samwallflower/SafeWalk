@@ -3,6 +3,8 @@ package com.samwallflower.safewalk.exception;
 import com.samwallflower.safewalk.response.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -42,6 +44,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(BAD_REQUEST).body(new ApiResponse(e.getMessage(), null));
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse> handleRuntimeException(RuntimeException e) {
+        return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse> handleValidationException(MethodArgumentNotValidException e){
         String errorMessage = e.getBindingResult().getFieldErrors()
@@ -60,5 +67,16 @@ public class GlobalExceptionHandler {
                 .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .orElse("Validation failed");
         return ResponseEntity.status(BAD_REQUEST).body(new ApiResponse(errorMessage, null));
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ApiResponse> handleDisabledException(DisabledException e) {
+        return ResponseEntity.status(FORBIDDEN).body(new ApiResponse(
+                "Your account is not verified yet. Please check your email for the verification code. Error: "+ e.getMessage(), null));
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse> handleAuthenticationException(AuthenticationException e) {
+        return ResponseEntity.status(UNAUTHORIZED).body(new ApiResponse("Error: " + e.getMessage(), null));
     }
 }
