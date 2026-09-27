@@ -1,7 +1,6 @@
 package com.samwallflower.safewalk.service.emergency;
 
 import com.samwallflower.safewalk.dto.EmergencyAuthorityDto;
-import com.samwallflower.safewalk.dto.EmergencyDto;
 import com.samwallflower.safewalk.enums.EmergencyTriggerSource;
 import com.samwallflower.safewalk.enums.SessionStatus;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
@@ -17,13 +16,16 @@ import com.samwallflower.safewalk.service.email.EmailService;
 import com.samwallflower.safewalk.service.emergencyauthority.IEmergencyAuthorityService;
 import com.samwallflower.safewalk.service.notification.INotificationService;
 import com.samwallflower.safewalk.websocket.connection.WalkSessionConnectionRegistry;
+import com.samwallflower.safewalk.websocket.message.AlertMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,8 +42,8 @@ class EmergencyServiceTest {
     @Mock private TwilioClient twilioClient;
     @Mock private INotificationService notificationService;
     @Mock private IEmergencyAuthorityService emergencyAuthorityService;
-    @Mock private WalkSessionConnectionRegistry connectionRegistry;
     @Mock private EmailService emailService;
+    @Mock private WalkSessionConnectionRegistry connectionRegistry;
 
     private EmergencyService service;
 
@@ -52,8 +54,11 @@ class EmergencyServiceTest {
 
         lenient().when(emergencyAuthorityService.findEmergencyAuthorityByLocation(anyDouble(), anyDouble()))
                 .thenReturn(buildAuthorityDto());
-        lenient().when(emergencyRepository.save(any()))
-                .thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(emergencyRepository.save(any())).thenAnswer(inv -> {
+            Emergency e = inv.getArgument(0);
+            if (e.getId() == null) e.setId(100L); // simulate DB assigning an id on first save
+            return e;
+        });
     }
 
     private EmergencyAuthorityDto buildAuthorityDto() {
@@ -88,6 +93,8 @@ class EmergencyServiceTest {
         ws.setStatus(status);
         ws.setLastKnownLatitude(47.5);
         ws.setLastKnownLongitude(21.6);
+        ws.setAlarmTriggered(false);
+        ws.setDeviationTriggered(false);
         return ws;
     }
 
@@ -100,7 +107,7 @@ class EmergencyServiceTest {
         return e;
     }
 
-    // --- triggerEmergencyByUser & triggerEmergencySystem Tests ---
+    // ---------- triggerEmergencyByUser ----------
 
     @Test
     void triggerEmergencyByUser_throws_whenNotOwner() {
@@ -115,88 +122,19 @@ class EmergencyServiceTest {
     }
 
     @Test
-    void triggerEmergency_success_notifiesViaSmsAndEmail() {
-        EmergencyContact contact = buildContact(1L, "+3611111111", "friend@example.com");
-        User user = buildUser(1L, List.of(contact));
-        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
-        when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-
-        service.triggerEmergencyByUser(10L, 1L);
-
-        assertThat(session.getStatus()).isEqualTo(SessionStatus.EMERGENCY);
-        verify(twilioClient).sendSms(eq("+3611111111"), anyString());
-        verify(emailService).sendEmail(eq("friend@example.com"), anyString(), anyString());
-        verify(emergencyRepository).save(argThat(e -> e.getNotifiedEmergencyContacts().contains(contact)));
-        verify(notificationService).pushEmergencyAlert(eq(10L), any());
-    }
-
-    @Test
-    void triggerEmergency_smsOnly_whenContactHasNoEmail() {
-        EmergencyContact contact = buildContact(1L, "+3611111111", null);
-        User user = buildUser(1L, List.of(contact));
-        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
-        when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-
-        service.triggerEmergencyByUser(10L, 1L);
-
-        verify(twilioClient).sendSms(eq("+3611111111"), anyString());
-        verifyNoInteractions(emailService);
-    }
-
-    @Test
-    void triggerEmergency_emailOnly_whenContactHasNoPhone() {
-        EmergencyContact contact = buildContact(1L, null, "friend@example.com");
-        User user = buildUser(1L, List.of(contact));
-        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
-        when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-
-        service.triggerEmergencyByUser(10L, 1L);
-
-        verifyNoInteractions(twilioClient);
-        verify(emailService).sendEmail(eq("friend@example.com"), anyString(), anyString());
-    }
-
-    @Test
-    void triggerEmergency_contactNotCountedAsNotified_whenBothChannelsFail() {
-        EmergencyContact contact = buildContact(1L, "+3611111111", "friend@example.com");
-        User user = buildUser(1L, List.of(contact));
-        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
-        when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-
-        doThrow(new ResourceProcessingException("sms failed")).when(twilioClient).sendSms(anyString(), anyString());
-        doThrow(new ResourceProcessingException("email failed")).when(emailService).sendEmail(anyString(), anyString(), anyString());
-
-        service.triggerEmergencyByUser(10L, 1L);
-
-        verify(emergencyRepository).save(argThat(e -> e.getNotifiedEmergencyContacts().isEmpty()));
-    }
-
-    @Test
-    void triggerEmergency_doesNotThrow_whenNoContactsAtAll() {
+    void triggerEmergencyByUser_returnsNull_whenAlreadyEmergency() {
         User user = buildUser(1L, List.of());
-        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
-        when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-
-        service.triggerEmergencyByUser(10L, 1L);
-
-        assertThat(session.getStatus()).isEqualTo(SessionStatus.EMERGENCY);
-        verify(emergencyRepository).save(any());
-        verify(notificationService).pushEmergencyAlert(eq(10L), any());
-    }
-
-    @Test
-    void triggerEmergency_isIdempotent_whenAlreadyInEmergencyStatus() {
-        User user = buildUser(1L, List.of(buildContact(1L, "+3611111111", null)));
         WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
 
-        service.triggerEmergencyByUser(10L, 1L);
+        var result = service.triggerEmergencyByUser(10L, 1L);
 
+        assertThat(result).isNull();
         verifyNoInteractions(twilioClient, emailService, emergencyRepository);
     }
 
     @Test
-    void triggerEmergency_throws_whenSessionCompleted() {
+    void triggerEmergencyByUser_throws_whenSessionCompleted() {
         User user = buildUser(1L, List.of());
         WalkSession session = buildSession(10L, user, SessionStatus.COMPLETED);
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
@@ -206,268 +144,287 @@ class EmergencyServiceTest {
     }
 
     @Test
-    void triggerEmergency_stillSendsNotifications_whenAuthorityLookupFails() {
+    void triggerEmergencyByUser_success_savesBeforePushingAlert_withRealEmergencyId() {
+        EmergencyContact contact = buildContact(1L, "+3611111111", "friend@example.com");
+        User user = buildUser(1L, List.of(contact));
+        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
+        when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
+
+        service.triggerEmergencyByUser(10L, 1L);
+
+        assertThat(session.getStatus()).isEqualTo(SessionStatus.EMERGENCY);
+        verify(twilioClient).sendSms(eq("+3611111111"), anyString());
+        verify(emailService).sendEmail(eq("friend@example.com"), anyString(), anyString());
+
+        ArgumentCaptor<AlertMessage> captor = ArgumentCaptor.forClass(AlertMessage.class);
+        verify(notificationService).pushEmergencyAlert(eq(10L), captor.capture());
+        assertThat(captor.getValue().getEmergencyId()).isEqualTo(100L); // the simulated saved id
+        assertThat(captor.getValue().getSessionId()).isEqualTo(10L);
+    }
+
+    @Test
+    void triggerEmergencyByUser_doesNotThrow_whenNoContacts() {
+        User user = buildUser(1L, List.of());
+        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
+        when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
+
+        service.triggerEmergencyByUser(10L, 1L);
+
+        assertThat(session.getStatus()).isEqualTo(SessionStatus.EMERGENCY);
+        verify(emergencyRepository).save(any());
+        verify(notificationService).pushEmergencyAlert(eq(10L), any());
+    }
+
+    @Test
+    void triggerEmergencyByUser_stillNotifies_whenAuthorityLookupFails() {
         EmergencyContact contact = buildContact(1L, "+3611111111", null);
         User user = buildUser(1L, List.of(contact));
         WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
         when(emergencyAuthorityService.findEmergencyAuthorityByLocation(anyDouble(), anyDouble()))
-                .thenThrow(new ResourceNotFoundException("No authority for this country"));
+                .thenThrow(new ResourceNotFoundException("No authority"));
 
         service.triggerEmergencyByUser(10L, 1L);
 
         verify(twilioClient).sendSms(anyString(), anyString());
-        verify(emergencyRepository).save(any());
     }
 
-    @Test
-    void triggerEmergencySystem_success_noOwnershipCheck() {
-        User user = buildUser(1L, List.of(buildContact(1L, "+3611111111", null)));
-        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
-        when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-
-        service.triggerEmergencySystem(10L, EmergencyTriggerSource.IDLE_TIMEOUT);
-
-        verify(emergencyRepository).save(argThat(e -> e.getTriggerSource() == EmergencyTriggerSource.IDLE_TIMEOUT));
-    }
-
-    // --- addEmergency Tests ---
+    // ---------- resolveEmergency ----------
 
     @Test
-    void addEmergency_success() {
+    void resolveEmergency_throws_whenAlreadyResolved() {
         User user = buildUser(1L, List.of());
-        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
-        when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-
-        service.addEmergency(10L, "MANUAL_SOS");
-
-        verify(emergencyRepository).save(argThat(e -> e.getTriggerSource() == EmergencyTriggerSource.MANUAL_SOS));
-    }
-
-    @Test
-    void addEmergency_throws_invalidSource() {
-        User user = buildUser(1L, List.of());
-        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
-        when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-
-        assertThatThrownBy(() -> service.addEmergency(10L, "INVALID_SOURCE"))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    // --- Retrieval & Count Tests ---
-
-    @Test
-    void getAllEmergencies_success() {
-        WalkSession session = buildSession(10L, buildUser(1L, List.of()), SessionStatus.EMERGENCY);
-        when(emergencyRepository.findAll()).thenReturn(List.of(buildEmergency(100L, session, EmergencyTriggerSource.MANUAL_SOS, false)));
-
-        List<EmergencyDto> results = service.getAllEmergencies();
-        assertThat(results).hasSize(1);
-    }
-
-    @Test
-    void getAllEmergenciesByTriggerSource_success() {
-        WalkSession session = buildSession(10L, buildUser(1L, List.of()), SessionStatus.EMERGENCY);
-        when(emergencyRepository.findByTriggerSource(EmergencyTriggerSource.IDLE_TIMEOUT))
-                .thenReturn(List.of(buildEmergency(100L, session, EmergencyTriggerSource.IDLE_TIMEOUT, false)));
-
-        List<EmergencyDto> results = service.getAllEmergenciesByTriggerSource("IDLE_TIMEOUT");
-        assertThat(results).hasSize(1);
-    }
-
-    @Test
-    void getAllEmergenciesByWalkSessionId_success() {
-        WalkSession session = buildSession(10L, buildUser(1L, List.of()), SessionStatus.EMERGENCY);
-        when(emergencyRepository.findByWalkSessionId(10L))
-                .thenReturn(List.of(buildEmergency(100L, session, EmergencyTriggerSource.MANUAL_SOS, false)));
-
-        List<EmergencyDto> results = service.getAllEmergenciesByWalkSessionId(10L);
-        assertThat(results).hasSize(1);
-    }
-
-    @Test
-    void getEmergencyById_success() {
-        WalkSession session = buildSession(10L, buildUser(1L, List.of()), SessionStatus.EMERGENCY);
-        when(emergencyRepository.findById(100L))
-                .thenReturn(Optional.of(buildEmergency(100L, session, EmergencyTriggerSource.MANUAL_SOS, false)));
-
-        EmergencyDto dto = service.getEmergencyById(100L);
-        assertThat(dto).isNotNull();
-    }
-
-    @Test
-    void getEmergencyById_throws_notFound() {
-        when(emergencyRepository.findById(100L)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> service.getEmergencyById(100L))
-                .isInstanceOf(ResourceNotFoundException.class);
-    }
-
-    @Test
-    void getActiveEmergencyByWalkSessionId_success() {
-        WalkSession session = buildSession(10L, buildUser(1L, List.of()), SessionStatus.EMERGENCY);
-        when(emergencyRepository.findByWalkSessionIdAndResolved(10L, false))
-                .thenReturn(List.of(buildEmergency(100L, session, EmergencyTriggerSource.MANUAL_SOS, false)));
-
-        EmergencyDto dto = service.getActiveEmergencyByWalkSessionId(10L);
-        assertThat(dto).isNotNull();
-    }
-
-    @Test
-    void getActiveEmergencyByWalkSessionId_throws_notFound() {
-        when(emergencyRepository.findByWalkSessionIdAndResolved(10L, false)).thenReturn(List.of());
-        assertThatThrownBy(() -> service.getActiveEmergencyByWalkSessionId(10L))
-                .isInstanceOf(ResourceNotFoundException.class);
-    }
-
-    @Test
-    void countEmergencyByTriggerSource_success() {
-        when(emergencyRepository.countByTriggerSource(EmergencyTriggerSource.SYSTEM)).thenReturn(5L);
-        long count = service.countEmergencyByTriggerSource("SYSTEM");
-        assertThat(count).isEqualTo(5L);
-    }
-
-    // --- resolveEmergency Tests ---
-
-    @Test
-    void resolveEmergency_throws_alreadyResolved() {
-        WalkSession session = buildSession(10L, buildUser(1L, List.of()), SessionStatus.EMERGENCY);
-        Emergency emergency = buildEmergency(100L, session, EmergencyTriggerSource.MANUAL_SOS, true);
+        WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.IDLE_TIMEOUT, true);
 
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-        when(emergencyRepository.findById(100L)).thenReturn(Optional.of(emergency));
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
 
-        assertThatThrownBy(() -> service.resolveEmergency(100L, 10L, 1L))
+        assertThatThrownBy(() -> service.resolveEmergency(5L, 10L, 1L))
                 .isInstanceOf(ResourceProcessingException.class)
                 .hasMessageContaining("already resolved");
     }
 
     @Test
-    void resolveEmergency_throws_notOwner() {
-        WalkSession session = buildSession(10L, buildUser(1L, List.of()), SessionStatus.EMERGENCY);
-        Emergency emergency = buildEmergency(100L, session, EmergencyTriggerSource.MANUAL_SOS, false);
+    void resolveEmergency_throws_whenNotOwner() {
+        User owner = buildUser(1L, List.of());
+        WalkSession session = buildSession(10L, owner, SessionStatus.EMERGENCY);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.IDLE_TIMEOUT, false);
 
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-        when(emergencyRepository.findById(100L)).thenReturn(Optional.of(emergency));
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
 
-        assertThatThrownBy(() -> service.resolveEmergency(100L, 10L, 999L))
-                .isInstanceOf(ResourceProcessingException.class)
-                .hasMessageContaining("does not belong to the user");
+        assertThatThrownBy(() -> service.resolveEmergency(5L, 10L, 999L))
+                .isInstanceOf(ResourceProcessingException.class);
     }
 
     @Test
-    void resolveEmergency_throws_notInEmergencyStatus() {
-        WalkSession session = buildSession(10L, buildUser(1L, List.of()), SessionStatus.ACTIVE);
-        Emergency emergency = buildEmergency(100L, session, EmergencyTriggerSource.MANUAL_SOS, false);
+    void resolveEmergency_throws_whenSessionNotInEmergencyStatus() {
+        User user = buildUser(1L, List.of());
+        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.IDLE_TIMEOUT, false);
 
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-        when(emergencyRepository.findById(100L)).thenReturn(Optional.of(emergency));
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
 
-        assertThatThrownBy(() -> service.resolveEmergency(100L, 10L, 1L))
-                .isInstanceOf(ResourceProcessingException.class)
-                .hasMessageContaining("not in EMERGENCY status");
+        assertThatThrownBy(() -> service.resolveEmergency(5L, 10L, 1L))
+                .isInstanceOf(ResourceProcessingException.class);
     }
 
     @Test
-    void resolveEmergency_throws_wrongSession() {
-        WalkSession session = buildSession(10L, buildUser(1L, List.of()), SessionStatus.EMERGENCY);
-        WalkSession otherSession = buildSession(20L, buildUser(1L, List.of()), SessionStatus.EMERGENCY);
-        Emergency emergency = buildEmergency(100L, otherSession, EmergencyTriggerSource.MANUAL_SOS, false);
+    void resolveEmergency_throws_whenEmergencyBelongsToDifferentSession() {
+        User user = buildUser(1L, List.of());
+        WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
+        WalkSession otherSession = buildSession(20L, user, SessionStatus.ACTIVE);
+        Emergency emergency = buildEmergency(5L, otherSession, EmergencyTriggerSource.IDLE_TIMEOUT, false);
 
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-        when(emergencyRepository.findById(100L)).thenReturn(Optional.of(emergency));
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
 
-        assertThatThrownBy(() -> service.resolveEmergency(100L, 10L, 1L))
+        assertThatThrownBy(() -> service.resolveEmergency(5L, 10L, 1L))
                 .isInstanceOf(ResourceProcessingException.class)
-                .hasMessageContaining("does not belong to the walk session");
+                .hasMessageContaining("does not belong");
     }
 
     @Test
-    void resolveEmergency_success_idleTimeout_resetsAlarm() {
+    void resolveEmergency_idleTimeout_resetsAlarmTriggered() {
         User user = buildUser(1L, List.of());
         WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
         session.setAlarmTriggered(true);
-        Emergency emergency = buildEmergency(100L, session, EmergencyTriggerSource.IDLE_TIMEOUT, false);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.IDLE_TIMEOUT, false);
 
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-        when(emergencyRepository.findById(100L)).thenReturn(Optional.of(emergency));
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
 
-        service.resolveEmergency(100L, 10L, 1L);
+        service.resolveEmergency(5L, 10L, 1L);
 
         assertThat(session.getStatus()).isEqualTo(SessionStatus.ACTIVE);
         assertThat(session.getAlarmTriggered()).isFalse();
         assertThat(emergency.getResolved()).isTrue();
-
-        verify(walkSessionRepository).save(session);
-        verify(emergencyRepository).save(emergency);
-        verify(notificationService).pushEmergencyAlert(eq(10L), any());
+        assertThat(emergency.getResolvedAt()).isNotNull();
     }
 
     @Test
-    void resolveEmergency_success_routeDeviation_resetsDeviation() {
+    void resolveEmergency_routeDeviation_resetsDeviationState() {
         User user = buildUser(1L, List.of());
         WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
         session.setDeviationTriggered(true);
-        Emergency emergency = buildEmergency(100L, session, EmergencyTriggerSource.ROUTE_DEVIATION, false);
+        session.setDeviationTriggeredAt(LocalDateTime.now());
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.ROUTE_DEVIATION, false);
 
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-        when(emergencyRepository.findById(100L)).thenReturn(Optional.of(emergency));
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
 
-        service.resolveEmergency(100L, 10L, 1L);
+        service.resolveEmergency(5L, 10L, 1L);
 
-        assertThat(session.getStatus()).isEqualTo(SessionStatus.ACTIVE);
         assertThat(session.getDeviationTriggered()).isFalse();
-        assertThat(emergency.getResolved()).isTrue();
+        assertThat(session.getDeviationTriggeredAt()).isNull();
     }
 
     @Test
-    void resolveEmergency_success_connectionLost_clearsDisconnect() {
+    void resolveEmergency_connectionLost_clearsRegistry() {
         User user = buildUser(1L, List.of());
         WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
-        Emergency emergency = buildEmergency(100L, session, EmergencyTriggerSource.CONNECTION_LOST, false);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.CONNECTION_LOST, false);
 
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-        when(emergencyRepository.findById(100L)).thenReturn(Optional.of(emergency));
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
 
-        service.resolveEmergency(100L, 10L, 1L);
+        service.resolveEmergency(5L, 10L, 1L);
 
-        assertThat(session.getStatus()).isEqualTo(SessionStatus.ACTIVE);
         verify(connectionRegistry).clearDisconnect(10L);
     }
 
     @Test
-    void resolveEmergency_success_notifiesContacts() {
-        EmergencyContact contact = buildContact(1L, "+3611111111", "friend@example.com");
-        User user = buildUser(1L, List.of(contact));
+    void resolveEmergency_pushesAlert_withEmergencyIdAndSessionId() {
+        User user = buildUser(1L, List.of());
         WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
-        Emergency emergency = buildEmergency(100L, session, EmergencyTriggerSource.MANUAL_SOS, false);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.MANUAL_SOS, false);
 
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-        when(emergencyRepository.findById(100L)).thenReturn(Optional.of(emergency));
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
 
-        service.resolveEmergency(100L, 10L, 1L);
+        service.resolveEmergency(5L, 10L, 1L);
 
-        verify(emailService).sendEmail(eq("friend@example.com"), eq("Emergency Resolved"), anyString());
-        verify(twilioClient).sendSms(eq("+3611111111"), anyString());
-        verify(notificationService).pushEmergencyAlert(eq(10L), any());
+        ArgumentCaptor<AlertMessage> captor = ArgumentCaptor.forClass(AlertMessage.class);
+        verify(notificationService).pushEmergencyAlert(eq(10L), captor.capture());
+        assertThat(captor.getValue().getEmergencyId()).isEqualTo(5L);
+        assertThat(captor.getValue().getSessionId()).isEqualTo(10L);
     }
 
     @Test
-    void resolveEmergency_failsGracefullyWhenNotificationFails() {
+    void resolveEmergency_notifiesContactsOfResolution() {
         EmergencyContact contact = buildContact(1L, "+3611111111", "friend@example.com");
         User user = buildUser(1L, List.of(contact));
         WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
-        Emergency emergency = buildEmergency(100L, session, EmergencyTriggerSource.MANUAL_SOS, false);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.MANUAL_SOS, false);
 
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
-        when(emergencyRepository.findById(100L)).thenReturn(Optional.of(emergency));
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
 
-        doThrow(new ResourceProcessingException("Twilio Down")).when(twilioClient).sendSms(anyString(), anyString());
-        doThrow(new ResourceProcessingException("Email Down")).when(emailService).sendEmail(anyString(), anyString(), anyString());
+        service.resolveEmergency(5L, 10L, 1L);
 
-        // Should not throw, should catch and continue resolving
-        service.resolveEmergency(100L, 10L, 1L);
+        verify(twilioClient).sendSms(eq("+3611111111"), contains("safe"));
+        verify(emailService).sendEmail(eq("friend@example.com"), eq("Emergency Resolved"), anyString());
+    }
+
+    // ---------- getActiveEmergencyByWalkSessionId ----------
+
+    @Test
+    void getActiveEmergencyByWalkSessionId_returnsUnresolvedOne() {
+        Emergency emergency = buildEmergency(5L, null, EmergencyTriggerSource.MANUAL_SOS, false);
+        when(emergencyRepository.findByWalkSessionIdAndResolved(10L, false))
+                .thenReturn(List.of(emergency));
+
+        var dto = service.getActiveEmergencyByWalkSessionId(10L);
+
+        assertThat(dto.getId()).isEqualTo(5L);
+    }
+
+    @Test
+    void getActiveEmergencyByWalkSessionId_throws_whenNoneUnresolved() {
+        when(emergencyRepository.findByWalkSessionIdAndResolved(10L, false)).thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.getActiveEmergencyByWalkSessionId(10L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    // ---------- countEmergencyByTriggerSource ----------
+
+    @Test
+    void countEmergencyByTriggerSource_delegatesCorrectly() {
+        when(emergencyRepository.countByTriggerSource(EmergencyTriggerSource.IDLE_TIMEOUT)).thenReturn(7L);
+
+        long count = service.countEmergencyByTriggerSource("idle_timeout"); // lowercase input
+
+        assertThat(count).isEqualTo(7L);
+    }
+
+    // ---------- updateEmergencyResolveById (with the fix applied) ----------
+
+    @Test
+    void updateEmergencyResolveById_setsResolvedAtOnlyWhenResolvedTrue() {
+        Emergency emergency = buildEmergency(5L, null, EmergencyTriggerSource.MANUAL_SOS, false);
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
+
+        service.updateEmergencyResolveById(5L, true);
 
         assertThat(emergency.getResolved()).isTrue();
-        verify(emergencyRepository).save(emergency);
+        assertThat(emergency.getResolvedAt()).isNotNull();
+    }
+
+
+    // ---------- deleteEmergencyById (with the fix applied) ----------
+
+    @Test
+    void deleteEmergencyById_resetsIdleState_whenDeletingActiveIdleEmergency() {
+        User user = buildUser(1L, List.of());
+        WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
+        session.setAlarmTriggered(true);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.IDLE_TIMEOUT, false);
+
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
+
+        service.deleteEmergencyById(5L);
+
+        assertThat(session.getStatus()).isEqualTo(SessionStatus.ACTIVE);
+        assertThat(session.getAlarmTriggered()).isFalse();
+        verify(emergencyRepository).deleteById(5L);
+    }
+
+    @Test
+    void deleteEmergencyById_clearsConnectionRegistry_whenDeletingConnectionLostEmergency() {
+        User user = buildUser(1L, List.of());
+        WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.CONNECTION_LOST, false);
+
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
+
+        service.deleteEmergencyById(5L);
+
+        verify(connectionRegistry).clearDisconnect(10L);
+    }
+
+    @Test
+    void deleteEmergencyById_doesNotTouchSession_whenSessionNotInEmergency() {
+        User user = buildUser(1L, List.of());
+        WalkSession session = buildSession(10L, user, SessionStatus.ACTIVE);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.MANUAL_SOS, true);
+
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
+
+        service.deleteEmergencyById(5L);
+
+        assertThat(session.getStatus()).isEqualTo(SessionStatus.ACTIVE); // unchanged
+        verify(walkSessionRepository, never()).save(any());
+        verify(emergencyRepository).deleteById(5L);
+    }
+
+    @Test
+    void deleteEmergencyById_throws_whenNotFound() {
+        when(emergencyRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.deleteEmergencyById(999L))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 }

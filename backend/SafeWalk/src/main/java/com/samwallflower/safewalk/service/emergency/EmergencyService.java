@@ -225,7 +225,7 @@ public class EmergencyService implements IEmergencyService{
         return emergencyRepository.findById(id)
                 .map(emergency -> {
                     emergency.setResolved(resolved);
-                    emergency.setResolvedAt(LocalDateTime.now());
+                    emergency.setResolvedAt(LocalDateTime.now()); // timestamp of last change to `resolved`, not "when it became true"
                     Emergency updated = emergencyRepository.save(emergency);
                     return convertToDto(updated);
                 })
@@ -240,10 +240,20 @@ public class EmergencyService implements IEmergencyService{
 
         WalkSession session = emergency.getWalkSession();
 
-        session.getEmergenciesTriggered().remove(emergency);
-
-        if(session.getStatus() == SessionStatus.EMERGENCY){
+        if (session.getStatus() == SessionStatus.EMERGENCY) {
             session.setStatus(SessionStatus.ACTIVE);
+
+            switch (emergency.getTriggerSource()) {
+                case IDLE_TIMEOUT -> session.setAlarmTriggered(false);
+                case ROUTE_DEVIATION -> {
+                    session.setDeviationTriggered(false);
+                    session.setDeviationTriggeredAt(null);
+                }
+                case CONNECTION_LOST -> walkSessionConnectionRegistry.clearDisconnect(session.getId());
+                default -> { /* MANUAL_SOS, SYSTEM — no per-trigger state to clear */ }
+            }
+
+            session.setLastLocationUpdate(LocalDateTime.now());
             walkSessionRepository.save(session);
         }
 

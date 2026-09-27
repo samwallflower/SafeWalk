@@ -263,4 +263,13 @@ class AnomalyDetectionServiceTest {
 
         verify(connectionRegistry).getDisconnectedAt(2L);
     }
+
+    @Test
+    void checkAllActiveSessions_returnsEarly_whenNoActiveSessions() {
+        when(walkSessionRepository.findByStatus(SessionStatus.ACTIVE)).thenReturn(List.of());
+
+        service.checkAllActiveSessions();
+
+        verifyNoInteractions(notificationService, emergencyService, connectionRegistry);
+    }
 }
