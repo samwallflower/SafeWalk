@@ -1,7 +1,6 @@
 package com.samwallflower.safewalk.controller;
 
 import com.samwallflower.safewalk.dto.EmergencyDto;
-import com.samwallflower.safewalk.enums.EmergencyTriggerSource;
 import com.samwallflower.safewalk.request.emergency.UpdateEmergencyRequest;
 import com.samwallflower.safewalk.response.ApiResponse;
 import com.samwallflower.safewalk.service.emergency.IEmergencyService;
