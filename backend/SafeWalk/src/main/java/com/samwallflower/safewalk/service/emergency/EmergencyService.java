@@ -14,6 +14,7 @@ import com.samwallflower.safewalk.model.User;
 import com.samwallflower.safewalk.model.WalkSession;
 import com.samwallflower.safewalk.repository.EmergencyRepository;
 import com.samwallflower.safewalk.repository.WalkSessionRepository;
+import com.samwallflower.safewalk.request.emergency.UpdateEmergencyRequest;
 import com.samwallflower.safewalk.service.email.EmailService;
 import com.samwallflower.safewalk.service.emergencyauthority.IEmergencyAuthorityService;
 import com.samwallflower.safewalk.service.notification.INotificationService;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -70,11 +72,14 @@ public class EmergencyService implements IEmergencyService{
     }
     // for dev purposes
     @Override
+    @Transactional
     public EmergencyDto addEmergency(Long sessionId, String source) {
         WalkSession session = walkSessionRepository.findById(sessionId)
                 .orElseThrow(()-> new ResourceNotFoundException("Walk session not found with id: " + sessionId));
 
         Emergency emergency = createEmergency(session, resolveTriggerSource(source));
+        session.setStatus(SessionStatus.EMERGENCY);
+        walkSessionRepository.save(session);
         return convertToDto(emergencyRepository.save(emergency));
     }
 
@@ -215,6 +220,38 @@ public class EmergencyService implements IEmergencyService{
     public long countEmergencyByTriggerSource(String source) {
         return emergencyRepository.countByTriggerSource(resolveTriggerSource(source));
     }
+
+    @Override
+    @Transactional
+    public EmergencyDto updateEmergencyById(Long id, UpdateEmergencyRequest request) {
+        return emergencyRepository.findById(id)
+                .map(emergency -> {
+                    Optional.ofNullable(request.getResolved()).ifPresent(emergency::setResolved);
+                    Optional.ofNullable(request.getResolvedAt()).ifPresent(emergency::setResolvedAt);
+                    Emergency updated = emergencyRepository.save(emergency);
+                    return convertToDto(updated);
+                })
+                .orElseThrow(() -> new ResourceNotFoundException("Emergency not found with id: " + id));
+    }
+
+    @Override
+    @Transactional
+    public void deleteEmergencyById(Long id) {
+        Emergency emergency = emergencyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Emergency not found with id: " + id));
+
+        WalkSession session = emergency.getWalkSession();
+
+        session.getEmergenciesTriggered().remove(emergency);
+
+        if(session.getStatus() == SessionStatus.EMERGENCY){
+            session.setStatus(SessionStatus.ACTIVE);
+            walkSessionRepository.save(session);
+        }
+
+        emergencyRepository.deleteById(id);
+    }
+
 
     private EmergencyDto executeEmergencyProtocol(WalkSession session, EmergencyTriggerSource source) {
         if (session.getStatus()== SessionStatus.EMERGENCY){

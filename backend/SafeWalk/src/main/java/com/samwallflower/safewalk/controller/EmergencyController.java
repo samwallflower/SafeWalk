@@ -2,6 +2,7 @@ package com.samwallflower.safewalk.controller;
 
 import com.samwallflower.safewalk.dto.EmergencyDto;
 import com.samwallflower.safewalk.enums.EmergencyTriggerSource;
+import com.samwallflower.safewalk.request.emergency.UpdateEmergencyRequest;
 import com.samwallflower.safewalk.response.ApiResponse;
 import com.samwallflower.safewalk.service.emergency.IEmergencyService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,20 @@ public class EmergencyController {
     public ResponseEntity<ApiResponse> createEmergency(@PathVariable Long sessionId, @RequestParam String source) {
         EmergencyDto emergency = emergencyService.addEmergency(sessionId, source);
         return ResponseEntity.ok(new ApiResponse("Emergency created successfully", emergency));
+    }
+
+    //TODO:ADMIN ONLY
+    @PutMapping("/{id}/update")
+    public ResponseEntity<ApiResponse> updateEmergency(@PathVariable Long id, @RequestBody UpdateEmergencyRequest request) {
+        EmergencyDto emergency = emergencyService.updateEmergencyById(id, request);
+        return ResponseEntity.ok(new ApiResponse("Emergency updated successfully", emergency));
+    }
+
+    //TODO:ADMIN ONLY
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<ApiResponse> deleteEmergency(@PathVariable Long id) {
+        emergencyService.deleteEmergencyById(id);
+        return ResponseEntity.ok(new ApiResponse("Emergency deleted successfully", null));
     }
 
     // get all emergencies
