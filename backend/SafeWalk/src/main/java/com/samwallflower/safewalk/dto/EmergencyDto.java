@@ -19,4 +19,7 @@ public class EmergencyDto implements Serializable {
     private Double triggerLongitude;
     private List<EmergencyContactDto> notifiedEmergencyContacts;
     private LocalDateTime triggerTimestamp;
+    private Boolean resolved;
+    private LocalDateTime resolvedAt;
+
 }

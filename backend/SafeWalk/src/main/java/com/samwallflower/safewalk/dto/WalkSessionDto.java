@@ -25,4 +25,10 @@ public class WalkSessionDto implements Serializable {
     private LocalDateTime lastLocationUpdate;
     private LocalDateTime lastArrivedAt;
     private SessionStatus status;
+
+    private Boolean alarmTriggered;
+    private Boolean autoCompleted;
+    private Boolean deviationTriggered;
+    private LocalDateTime deviationTriggeredAt;
+
 }
