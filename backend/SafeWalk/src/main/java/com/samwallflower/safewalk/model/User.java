@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,7 +39,19 @@ public class User {
     private String lastName;
     private String phoneNumber;
 
+    private boolean enabled = false;
+
+    @Column(name="verification_code")
+    private String verificationCode;
+
+    @Column(name="verification_expiration")
+    private LocalDateTime verificationCodeExpiresAt;
+
+    @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate(){

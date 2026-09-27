@@ -15,6 +15,7 @@ import com.samwallflower.safewalk.model.WalkSession;
 import com.samwallflower.safewalk.repository.EmergencyRepository;
 import com.samwallflower.safewalk.repository.WalkSessionRepository;
 import com.samwallflower.safewalk.service.email.EmailService;
+import com.samwallflower.safewalk.service.email.EmailTemplates;
 import com.samwallflower.safewalk.service.emergencyauthority.IEmergencyAuthorityService;
 import com.samwallflower.safewalk.service.notification.INotificationService;
 import com.samwallflower.safewalk.websocket.connection.WalkSessionConnectionRegistry;
@@ -170,11 +171,12 @@ public class EmergencyService implements IEmergencyService{
                 "Good news! %s %s has confirmed they are safe. The emergency situation has been resolved.",
                 user.getFirstName(), user.getLastName()
         );
+        String htmlBody = EmailTemplates.emergencyResolved(user.getFirstName()+" "+ user.getLastName());
 
         for (EmergencyContact contact : contacts) {
             if(contact.getContactEmail() != null && !contact.getContactEmail().isEmpty()) {
                 try {
-                    emailService.sendEmail(contact.getContactEmail(), "Emergency Resolved", body);
+                    emailService.sendEmail(contact.getContactEmail(), "Emergency Resolved", htmlBody);
                     log.info("Emergency resolution email sent to contact {} for session {}", contact.getId(), session.getId());
                 } catch (ResourceProcessingException e) {
                     log.error("Failed to send resolution email to contact {} for session {}: {}",
@@ -329,7 +331,8 @@ public class EmergencyService implements IEmergencyService{
                 // Email sending
                 if (emergencyContact.getContactEmail() != null && !emergencyContact.getContactEmail().isEmpty()) {
                     try {
-                        String htmlBody = buildEmergencyEmailHtml(user, trackingLink, authorityLine);
+                        String htmlBody = EmailTemplates.emergencyAlert(user.getFirstName()+ " " + user.getLastName(),
+                                trackingLink, authorityLine);
                         emailService.sendEmail(emergencyContact.getContactEmail(), subject, htmlBody);
                         emailSucceeded = true;
                         log.info("Emergency email sent to contact {} for session {}", emergencyContact.getId(), session.getId());
@@ -358,49 +361,6 @@ public class EmergencyService implements IEmergencyService{
             }
         }
         return notifiedContacts;
-    }
-
-    private String buildEmergencyEmailHtml(User user, String trackingLink, String authorityLine) {
-        return """
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Emergency Alert</title>
-                </head>
-                <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; margin: 0;">
-                  <table role="presentation" width="100%%" style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
-                    <tr>
-                      <td style="background-color: #d32f2f; padding: 20px; text-align: center;">
-                        <h1 style="color: #ffffff; margin: 0; font-size: 20px;">⚠ Emergency Alert</h1>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 24px;">
-                        <p style="font-size: 16px; color: #333333;">
-                          <strong>%s %s</strong> may need help right now.
-                        </p>
-                        <p style="text-align: center; margin: 24px 0;">
-                          <a href="%s" style="background-color: #d32f2f; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-                            View Live Location
-                          </a>
-                        </p>
-                        %s
-                        <p style="font-size: 13px; color: #888888; margin-top: 24px;">
-                          This alert was sent automatically by SafeWalk on behalf of %s %s.
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </body>
-                </html>
-                """.formatted(
-                user.getFirstName(), user.getLastName(),
-                trackingLink,
-                authorityLine.isBlank() ? "" : "<p style=\"font-size: 14px; color: #555555; background-color: #fdecea; padding: 12px; border-radius: 4px;\">" + authorityLine + "</p>",
-                user.getFirstName(), user.getLastName()
-        );
     }
 
     private Emergency createEmergency(WalkSession session, EmergencyTriggerSource source) {
