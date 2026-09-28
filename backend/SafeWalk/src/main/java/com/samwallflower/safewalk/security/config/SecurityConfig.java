@@ -37,8 +37,7 @@ public class SecurityConfig {
     private final JwtAccessDeniedHandler accessDeniedHandler;
     private final JwtUtils jwtUtils;
 
-    private static final List<String> SECURED_URLS = List.of(
-    );
+    //private static final List<String> SECURED_URLS = List.of();
 
     @Bean
     public PasswordEncoder passwordEncoder(){
@@ -70,8 +69,9 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.requestMatchers(SECURED_URLS.toArray(String[]::new)).authenticated()
-                        .anyRequest().permitAll());
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                //.authorizeHttpRequests(auth -> auth.requestMatchers(SECURED_URLS.toArray(String[]::new)).authenticated()
+                //        .anyRequest().permitAll());
 
 
         http.authenticationProvider(authenticationProvider());

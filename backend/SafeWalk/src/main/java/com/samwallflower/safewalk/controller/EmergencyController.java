@@ -58,7 +58,7 @@ public class EmergencyController {
         List<EmergencyDto> emergencies = emergencyService.getAllEmergenciesByTriggerSource(source);
         return ResponseEntity.ok(new ApiResponse("Emergencies retrieved successfully for source: " + source, emergencies));
     }
-    // should we show the user which emergencies were triggered for their certain walk session?
+
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/session/{sessionId}/all")
     public ResponseEntity<ApiResponse> getAllEmergenciesByWalkSessionId(@PathVariable Long sessionId) {
