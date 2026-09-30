@@ -2,7 +2,6 @@ package com.samwallflower.safewalk.service.walksession;
 
 import com.samwallflower.safewalk.dto.WalkSessionDto;
 import com.samwallflower.safewalk.enums.SessionStatus;
-import com.samwallflower.safewalk.exception.RateLimitExceededException;
 import com.samwallflower.safewalk.exception.ResourceAlreadyExistsException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
 import com.samwallflower.safewalk.exception.ResourceProcessingException;
@@ -14,6 +13,7 @@ import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.repository.WalkSessionRepository;
 import com.samwallflower.safewalk.request.walksession.AddWalkSessionRequest;
 import com.samwallflower.safewalk.request.walksession.UpdateWalkSession;
+import com.samwallflower.safewalk.security.util.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -40,6 +40,7 @@ public class WalkSessionService implements IWalkSessionService {
     @Override
     @Transactional
     public WalkSessionDto startWalkSessionDto(Long userId, AddWalkSessionRequest request) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         User user = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User not found with id: " + userId));
         Route route = routeRepository.findById(request.getChosenRouteId()).orElseThrow(()-> new ResourceNotFoundException("Route not found with id: " + request.getChosenRouteId()));
 
@@ -85,6 +86,7 @@ public class WalkSessionService implements IWalkSessionService {
     @Override
     @Transactional
     public WalkSessionDto updateLocation(Long id, Long userId, UpdateWalkSession request) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         User user = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User not found with id: " + userId));
         WalkSession walkSession = walkSessionRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id: " + id));
 
@@ -135,6 +137,7 @@ public class WalkSessionService implements IWalkSessionService {
     @Override
     @Transactional
     public WalkSessionDto endSessionByIdAndUserId(Long id, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return walkSessionRepository.findById(id)
                 .map(walkSession->{
                     if(!walkSession.getUser().getId().equals(userId)){
@@ -147,6 +150,7 @@ public class WalkSessionService implements IWalkSessionService {
 
     @Override
     public WalkSessionDto getWalkSessionByIdAndUserId(Long id, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return walkSessionRepository.findByUserIdAndId(userId,id)
                 .map(this::convertToDto)
                 .orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id "+ id +" and user id "+ userId));
@@ -154,6 +158,7 @@ public class WalkSessionService implements IWalkSessionService {
 
     @Override
     public List<WalkSessionDto> getWalkSessionsByUserId(Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return walkSessionRepository.findByUserId(userId)
                 .stream()
                 .map(this::convertToDto)
@@ -188,6 +193,7 @@ public class WalkSessionService implements IWalkSessionService {
     @Override
     @Transactional
     public void deleteWalkSessionById(Long id, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         User user = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User not found with id: "+ userId));
         WalkSession walkSession = walkSessionRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id: " + id));
         Route route = routeRepository.findById(walkSession.getRoute().getId()).orElseThrow(()-> new ResourceNotFoundException("Route not found with id: "+ id));

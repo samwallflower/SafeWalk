@@ -9,10 +9,10 @@ import com.samwallflower.safewalk.repository.RoleRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.request.user.UserRegisterRequest;
 import com.samwallflower.safewalk.request.user.UserUpdateRequest;
+import com.samwallflower.safewalk.security.util.SecurityUtils;
 import com.samwallflower.safewalk.service.auth.AuthVerificationService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,19 +33,10 @@ public class UserService implements IUserService {
 
     @Override
     public UserDto getUserById(Long userId) {
-        ownerValidation(userId);
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         User user = userRepository.findById(userId).orElseThrow(()->
                 new ResourceNotFoundException("User not found with id: " + userId));
         return convertToDto(user);
-    }
-
-    private void ownerValidation(Long userId) {
-        User loggedInUser = getAuthenticatedUser();
-        boolean isAdmin = loggedInUser.getRoles().stream()
-                .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
-        if(!loggedInUser.getId().equals(userId) && !isAdmin){
-            throw new AccessDeniedException("You are not allowed to view or modify this resource.");
-        }
     }
 
     @Override
@@ -71,7 +62,7 @@ public class UserService implements IUserService {
 
     @Override
     public UserDto updateUser(Long userId, UserUpdateRequest user) {
-        ownerValidation(userId);
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return userRepository.findById(userId)
                 .map(existingUser -> {
                     Optional.ofNullable(user.getFirstName()).ifPresent(existingUser::setFirstName);
@@ -85,7 +76,7 @@ public class UserService implements IUserService {
 
     @Override
     public void deleteUser(Long userId) {
-        ownerValidation(userId);
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         userRepository.findById(userId)
                 .ifPresentOrElse(userRepository::delete, () -> {
                     throw new ResourceNotFoundException("User not found with id: " + userId);
@@ -94,7 +85,7 @@ public class UserService implements IUserService {
 
     @Override
     public UserDto setPhoneNumber(Long userId, String phoneNumber) {
-        ownerValidation(userId);
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return userRepository.findById(userId)
                 .map(existingUser -> {
                     existingUser.setPhoneNumber(phoneNumber);

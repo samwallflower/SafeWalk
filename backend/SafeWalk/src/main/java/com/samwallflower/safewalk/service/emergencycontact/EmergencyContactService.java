@@ -9,11 +9,10 @@ import com.samwallflower.safewalk.repository.EmergencyContactRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.request.emergencycontact.AddEmergencyContactRequest;
 import com.samwallflower.safewalk.request.emergencycontact.UpdateEmergencyContactRequest;
-import com.samwallflower.safewalk.service.user.IUserService;
+import com.samwallflower.safewalk.security.util.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,7 +23,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class EmergencyContactService implements IEmergencyContactService{
     private final EmergencyContactRepository emergencyContactRepository;
-    private final IUserService userService;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final int MAX_EMERGENCY_CONTACTS=5;
@@ -38,10 +36,15 @@ public class EmergencyContactService implements IEmergencyContactService{
     public EmergencyContactDto addEmergencyContact(Long userId, AddEmergencyContactRequest emergencyContact) {
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new ResourceNotFoundException("User not found with id: " + userId));
+
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+
         List<EmergencyContact> userContacts = user.getEmergencyContacts();
+
         if (userContacts.size() >= MAX_EMERGENCY_CONTACTS) {
             throw new ResourceProcessingException("User with id: " + userId + " already has 5 emergency contacts. Cannot add more. Try deleting some first or updating existing ones.");
         }
+
         EmergencyContact contact = new EmergencyContact();
         contact.setContactName(emergencyContact.getContactName());
         Optional.ofNullable(emergencyContact.getContactPhone()).ifPresent(contact::setContactPhone);
@@ -53,7 +56,7 @@ public class EmergencyContactService implements IEmergencyContactService{
 
     @Override
     public List<EmergencyContactDto> getEmergencyContactsByUserId(Long userId) {
-        ownerValidationSecurity(userId);
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new ResourceNotFoundException("User not found with id: " + userId));
         return user.getEmergencyContacts()
@@ -68,20 +71,29 @@ public class EmergencyContactService implements IEmergencyContactService{
     @Override
     @Transactional
     public void deleteEmergencyContact(Long userId, Long contactId) {
-        ownerValidationSecurity(userId);
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         emergencyContactRepository.delete(validateOwnership(userId, contactId));
     }
 
     @Override
     public EmergencyContactDto getEmergencyContactById(Long userId, Long contactId) {
-        ownerValidationSecurity(userId);
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return convertToDto(validateOwnership(userId, contactId));
     }
 
+    /**
+     * {@code @checkOwnershipOrAdmin} method checks whether the given user id is the logged in user
+     * {@code @validateOwnerShip} method checks whether the contact requested actually belongs to the user
+     * Double layer of security check
+     * @param userId
+     * @param contactId
+     * @param updateRequest
+     * @return
+     */
     @Override
     @Transactional
     public EmergencyContactDto updateEmergencyContact(Long userId, Long contactId, UpdateEmergencyContactRequest updateRequest) {
-        ownerValidationSecurity(userId);
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         EmergencyContact contact = validateOwnership(userId, contactId);
         Optional.ofNullable(updateRequest.getContactName()).ifPresent(contact::setContactName);
         Optional.ofNullable(updateRequest.getContactPhone()).ifPresent(contact::setContactPhone);
@@ -110,14 +122,5 @@ public class EmergencyContactService implements IEmergencyContactService{
             throw new ResourceNotFoundException("Emergency contact with id: " + contactId + " does not belong to user with id: " + userId);
         }
         return contact;
-    }
-
-    private void ownerValidationSecurity(Long userId){
-        User user = userService.getAuthenticatedUser();
-        boolean isAdmin = user.getRoles().stream()
-                .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
-        if(!user.getId().equals(userId) && !isAdmin){
-            throw new AccessDeniedException("You are not allowed to view or modify this resource.");
-        }
     }
 }

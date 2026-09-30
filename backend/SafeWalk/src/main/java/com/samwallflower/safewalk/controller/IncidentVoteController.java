@@ -58,6 +58,7 @@ public class IncidentVoteController {
         return ResponseEntity.ok(new ApiResponse("Vote count retrieved successfully", count));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/report/{reportId}/vote")
     public ResponseEntity<ApiResponse> getVotesForReport(@PathVariable Long reportId) {
         List<IncidentVoteDto> votes = incidentVoteService.getVotesForReport(reportId);

@@ -3,6 +3,7 @@ package com.samwallflower.safewalk.exception;
 import com.samwallflower.safewalk.response.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -78,5 +79,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse> handleAuthenticationException(AuthenticationException e) {
         return ResponseEntity.status(UNAUTHORIZED).body(new ApiResponse("Error: " + e.getMessage(), null));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse> handleAccessDeniedException(AccessDeniedException e) {
+        return ResponseEntity.status(FORBIDDEN).body(new ApiResponse("Error: " + e.getMessage(), null));
     }
 }

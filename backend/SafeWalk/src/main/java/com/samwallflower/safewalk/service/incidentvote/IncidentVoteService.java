@@ -12,6 +12,7 @@ import com.samwallflower.safewalk.model.User;
 import com.samwallflower.safewalk.repository.IncidentReportRepository;
 import com.samwallflower.safewalk.repository.IncidentVoteRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
+import com.samwallflower.safewalk.security.util.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,11 +27,14 @@ public class IncidentVoteService implements IIncidentVoteService {
     private final IncidentReportRepository incidentReportRepository;
     private final Integer DOWNVOTE_THRESHOLD = 5;
 
+    // first we make sure logged in user and the given user id are same
     // Users should not be able to cast vote on their own reports
     // after the vote has been cast we must also update the upvote and downvote number on the incident report
     @Override
     @Transactional
     public IncidentVoteDto castVote(Long userId, Long reportId, String voteType) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+
         User currentUser = userRepository.findById(userId)
                 .orElseThrow(()->new ResourceNotFoundException("User not found with id " + userId));
 
@@ -70,9 +74,16 @@ public class IncidentVoteService implements IIncidentVoteService {
     @Override
     @Transactional
     public void removeVoteFromIncidentReport(Long reportId, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+
         IncidentVote incidentVote = incidentVoteRepository.findByReportIdAndUserId(reportId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vote not found for report id " + reportId + " and user id " + userId));
 
+        reCalculateVotes(incidentVote);
+
+    }
+
+    private void reCalculateVotes(IncidentVote incidentVote) {
         IncidentReport report =  incidentVote.getReport();
 
         if (incidentVote.getVoteType() == VoteType.UPVOTE) {
@@ -85,7 +96,6 @@ public class IncidentVoteService implements IIncidentVoteService {
         }
         incidentReportRepository.save(report);
         incidentVoteRepository.delete(incidentVote);
-
     }
 
     @Override
@@ -110,6 +120,7 @@ public class IncidentVoteService implements IIncidentVoteService {
     // basically a list of all votes the user has cast
     @Override
     public List<IncidentVoteDto> getVotesByUserId(Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return incidentVoteRepository.findByUserId(userId).stream()
                 .map(this::convertToDto)
                 .toList();
@@ -117,6 +128,7 @@ public class IncidentVoteService implements IIncidentVoteService {
 
     @Override
     public IncidentVoteDto getVoteByReportIdAndUserId(Long reportId, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return incidentVoteRepository.findByReportIdAndUserId(reportId, userId)
                 .map(this::convertToDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Vote not found for report id " + reportId + " and user id " + userId));
@@ -157,18 +169,7 @@ public class IncidentVoteService implements IIncidentVoteService {
         IncidentVote incidentVote = incidentVoteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vote not found with id " + id));
 
-        IncidentReport report = incidentVote.getReport();
-
-        if (incidentVote.getVoteType() == VoteType.UPVOTE) {
-            report.setUpvotes(Math.max(0, report.getUpvotes() - 1));
-        } else {
-            report.setDownvotes(Math.max(0, report.getDownvotes() - 1));
-            if(report.getStatus() == ReportStatus.HIDDEN && report.getDownvotes() <= DOWNVOTE_THRESHOLD) {
-                report.setStatus(ReportStatus.ACTIVE); // or whatever the default status is
-            }
-        }
-        incidentReportRepository.save(report);
-        incidentVoteRepository.delete(incidentVote);
+        reCalculateVotes(incidentVote);
     }
 
     // basically delete all votes of a report

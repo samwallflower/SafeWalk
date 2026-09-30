@@ -11,13 +11,14 @@ import com.samwallflower.safewalk.model.IncidentReport;
 import com.samwallflower.safewalk.model.User;
 import com.samwallflower.safewalk.repository.IncidentCategoryRepository;
 import com.samwallflower.safewalk.repository.IncidentReportRepository;
-import com.samwallflower.safewalk.repository.IncidentVoteRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.request.incidentreport.AddIncidentReportRequest;
 import com.samwallflower.safewalk.request.incidentreport.UpdateIncidentReportRequest;
+import com.samwallflower.safewalk.security.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,7 +34,6 @@ import static java.time.temporal.ChronoUnit.MINUTES;
 public class IncidentReportService implements IIncidentReportService {
     private final IncidentReportRepository incidentReportRepository;
     private final IncidentCategoryRepository categoryRepository;
-    private final IncidentVoteRepository incidentVoteRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
@@ -41,8 +41,11 @@ public class IncidentReportService implements IIncidentReportService {
     private int report_add_time_limit_in_mins;
 
     // Rate Limiter -> one person can only add a report every 5 minutes
+    // checkOwnershipOrAdmin checks whether the given user id belongs to the logged in user
     @Override
     public IncidentReportDto addIncidentReport(AddIncidentReportRequest request, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+
         IncidentCategory category = categoryRepository.findByNameIgnoreCase(request.getCategory().getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Incident category not found with name: " + request.getCategory().getName()));
 
@@ -53,15 +56,14 @@ public class IncidentReportService implements IIncidentReportService {
                 .ifPresent(lastReport -> {
                     long minutesSinceLastReport = MINUTES.between(lastReport.getTimestamp(), LocalDateTime.now());
                     if (minutesSinceLastReport < report_add_time_limit_in_mins) {
-                        long minutesToWait = 5 - minutesSinceLastReport;
+                        long minutesToWait = report_add_time_limit_in_mins - minutesSinceLastReport;
                         throw new RateLimitExceededException("Rate limit exceeded. Please wait " + minutesToWait + " more minutes before submitting another report.");
                     }
                 });
 
         IncidentReport newReport = createIncidentReport(request, category);
         newReport.setUser(user);
-        incidentReportRepository.save(newReport);
-        return convertToDto(newReport);
+        return convertToDto(incidentReportRepository.save(newReport));
     }
 
     private IncidentReport createIncidentReport(AddIncidentReportRequest request, IncidentCategory category) {
@@ -75,13 +77,25 @@ public class IncidentReportService implements IIncidentReportService {
         return newReport;
     }
 
-
+    /**
+     * Suppose user id = 10 sends a request with
+     * user id = 20 and report id = 5, then this method will throw an AccessDeniedException because user 10 is not the owner of the report with id 5.
+     * even if report 5 belongs to user 20
+     * this would be a security breach as the report does not belong to user 10
+     * hence checkOwnershipOrAdmin checks the given user id belongs to logged in user or not
+     * Dual Security layers
+     * @param request
+     * @param userId
+     * @param id
+     * @return
+     */
     @Override
     public IncidentReportDto updateIncidentReport(UpdateIncidentReportRequest request, Long userId, Long id) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return incidentReportRepository.findById(id)
                 .map(incidentReport -> {
                     if (!incidentReport.getUser().getId().equals(userId)) {
-                        throw new ResourceProcessingException("You are not authorized to update this incident report");
+                        throw new AccessDeniedException("You are not authorized to update this incident report");
                     }
                     Optional.ofNullable(request.getDescription()).ifPresent(incidentReport::setDescription);
                     Optional.ofNullable(request.getLatitude()).ifPresent(incidentReport::setLatitude);
@@ -100,6 +114,7 @@ public class IncidentReportService implements IIncidentReportService {
 
     @Override
     public void deleteIncidentReportById(Long id, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         incidentReportRepository.delete(incidentReportRepository.findById(id)
                 .map(r -> {
                     if (!r.getUser().getId().equals(userId))
@@ -143,6 +158,7 @@ public class IncidentReportService implements IIncidentReportService {
 
     @Override
     public List<IncidentReportDto> getIncidentReportsByUserId(Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return incidentReportRepository.findByUserId(userId).stream()
                 .map(this::convertToDto)
                 .toList();
@@ -199,6 +215,7 @@ public class IncidentReportService implements IIncidentReportService {
 
     @Override
     public List<IncidentReportDto> getIncidentReportsByUserIdAndStatus(Long userId, String status) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         ReportStatus reportStatus = resolveStatus(status);
         return incidentReportRepository.findByUserIdAndStatus(userId, reportStatus).stream()
                 .map(this::convertToDto)

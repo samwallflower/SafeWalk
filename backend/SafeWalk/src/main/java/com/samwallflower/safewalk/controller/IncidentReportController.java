@@ -45,6 +45,7 @@ public class IncidentReportController {
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-status/report")
     public ResponseEntity<ApiResponse> getIncidentReportsByStatus(@RequestParam String status) {
         List<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByStatus(status);
@@ -75,12 +76,13 @@ public class IncidentReportController {
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-category-and-status/report")
     public ResponseEntity<ApiResponse> getIncidentReportsByCategoryAndStatus(@RequestParam String categoryName, @RequestParam String status) {
         List<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByCategoryAndStatus(categoryName, status);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
-
+    // basically user can see which of their reports are hidden , under review active etc
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/{userId}/by-user-id-and-status/report")
     public ResponseEntity<ApiResponse> getIncidentReportsByUserIdAndStatus(@PathVariable Long userId, @RequestParam String status) {
@@ -88,12 +90,14 @@ public class IncidentReportController {
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-location-and-status/report")
     public ResponseEntity<ApiResponse> getIncidentReportsByLocationAndStatus(@RequestParam Double latitude, @RequestParam Double longitude, @RequestParam Double radiusMeters, @RequestParam String status) {
         List<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByLocationAndStatus(latitude, longitude, radiusMeters, status);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-time-range-and-status/report")
     public ResponseEntity<ApiResponse> getIncidentReportsByTimeRangeAndStatus(@RequestParam String startTime, @RequestParam String endTime, @RequestParam String status) {
         List<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByTimeRangeAndStatus(startTime, endTime, status);
@@ -145,5 +149,33 @@ public class IncidentReportController {
     public ResponseEntity<ApiResponse> addIncidentReport(@Valid @RequestBody AddIncidentReportRequest request, @PathVariable Long userId) {
         IncidentReportDto addedIncidentReport = incidentReportService.addIncidentReport(request, userId);
         return ResponseEntity.ok(new ApiResponse("Incident report added successfully", addedIncidentReport));
+    }
+
+    // User facing status endpoints -> should only show active reports nothing else
+
+    @GetMapping("/by-status-active/report")
+    public ResponseEntity<ApiResponse> getAllActiveIncidentReports() {
+        List<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByStatus("ACTIVE");
+        return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
+    }
+
+
+    @GetMapping("/by-category-and-status-active/report")
+    public ResponseEntity<ApiResponse> getActiveIncidentReportsByCategory(@RequestParam String categoryName) {
+        List<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByCategoryAndStatus(categoryName, "ACTIVE");
+        return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
+    }
+
+
+    @GetMapping("/by-location-and-status-active/report")
+    public ResponseEntity<ApiResponse> getActiveIncidentReportsByLocation(@RequestParam Double latitude, @RequestParam Double longitude, @RequestParam Double radiusMeters) {
+        List<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByLocationAndStatus(latitude, longitude, radiusMeters, "ACTIVE");
+        return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
+    }
+
+    @GetMapping("/by-time-range-and-status-active/report")
+    public ResponseEntity<ApiResponse> getActiveIncidentReportsByTimeRange(@RequestParam String startTime, @RequestParam String endTime) {
+        List<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByTimeRangeAndStatus(startTime, endTime, "ACTIVE");
+        return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 }
