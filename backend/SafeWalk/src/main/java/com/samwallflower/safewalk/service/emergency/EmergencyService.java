@@ -14,6 +14,7 @@ import com.samwallflower.safewalk.model.User;
 import com.samwallflower.safewalk.model.WalkSession;
 import com.samwallflower.safewalk.repository.EmergencyRepository;
 import com.samwallflower.safewalk.repository.WalkSessionRepository;
+import com.samwallflower.safewalk.security.util.SecurityUtils;
 import com.samwallflower.safewalk.service.email.EmailService;
 import com.samwallflower.safewalk.service.email.EmailTemplates;
 import com.samwallflower.safewalk.service.emergencyauthority.IEmergencyAuthorityService;
@@ -25,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -48,11 +50,12 @@ public class EmergencyService implements IEmergencyService{
     @Override
     @Transactional
     public EmergencyDto triggerEmergencyByUser(Long sessionId, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         WalkSession session = walkSessionRepository.findById(sessionId)
                 .orElseThrow(()-> new ResourceNotFoundException("Walk session not found with id: " + sessionId));
 
         if(!session.getUser().getId().equals(userId)){
-            throw new ResourceProcessingException("Walk session with id: " + sessionId + " does not belong to the user with id: " + userId);
+            throw new AccessDeniedException("Walk session with id: " + sessionId + " does not belong to the user with id: " + userId);
         }
 
         return executeEmergencyProtocol(session, EmergencyTriggerSource.MANUAL_SOS);
@@ -103,6 +106,19 @@ public class EmergencyService implements IEmergencyService{
                 .toList();
     }
 
+    @Override
+    public List<EmergencyDto> getAllEmegenciesByWalkSessionIdAndUserId(Long sessionId, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+        WalkSession session = walkSessionRepository.findById(sessionId)
+                .orElseThrow(()-> new ResourceNotFoundException("Walk session not found with id: " + sessionId));
+        if (!session.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("Walk session with id: " + sessionId + " does not belong to the user with id: " + userId);
+        }
+        return emergencyRepository.findByWalkSessionId(sessionId).stream()
+                .map(this::convertToDto)
+                .toList();
+    }
+
     /**
      *
      * @param sessionId
@@ -121,7 +137,7 @@ public class EmergencyService implements IEmergencyService{
             throw new ResourceProcessingException("Emergency with id: " + id + " is already resolved.");
 
         if(!session.getUser().getId().equals(userId)){
-            throw new ResourceProcessingException("Walk session with id: " + sessionId + " does not belong to the user with id: " + userId);
+            throw new AccessDeniedException("Walk session with id: " + sessionId + " does not belong to the user with id: " + userId);
         }
         if(session.getStatus() != SessionStatus.EMERGENCY){
             throw new ResourceProcessingException("Walk session with id: " + sessionId + " is not in EMERGENCY status.");
@@ -208,8 +224,39 @@ public class EmergencyService implements IEmergencyService{
                 .orElseThrow(() -> new ResourceNotFoundException("Emergency not found with id: " + id));
     }
 
+    // okay so even if the logged in user and userId value are equal
+    // we are fetching emergency from the db as an entity
+    // we would like to make sure the user cannot call for emergencies that particularly
+    // does not belong to them
+    // we should throw an exception if the emergency does not belong to the user
+    // how to do that ?
+    @Override
+    public EmergencyDto getEmergencyByIdAndUserId(Long id, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+        Emergency emergency = emergencyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Emergency not found with id: " + id));
+        if (!emergency.getWalkSession().getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("Emergency with id: " + id + " does not belong to the user with id: " + userId);
+        }
+        return convertToDto(emergency);
+    }
+
     @Override
     public EmergencyDto getActiveEmergencyByWalkSessionId(Long sessionId) {
+        return emergencyRepository.findByWalkSessionIdAndResolved(sessionId, false).stream()
+                .findFirst()
+                .map(this::convertToDto)
+                .orElseThrow(() -> new ResourceNotFoundException("No active emergency found for walk session with id: " + sessionId));
+    }
+
+    @Override
+    public EmergencyDto getActiveEmergencyByWalkSessionIdAndUserId(Long sessionId, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+        WalkSession session = walkSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Walk session not found with id: " + sessionId));
+        if (!session.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("Walk session with id: " + sessionId + " does not belong to the user with id: " + userId);
+        }
         return emergencyRepository.findByWalkSessionIdAndResolved(sessionId, false).stream()
                 .findFirst()
                 .map(this::convertToDto)

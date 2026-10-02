@@ -15,6 +15,7 @@ import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.security.util.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -42,7 +43,7 @@ public class IncidentVoteService implements IIncidentVoteService {
                 .orElseThrow(()->new ResourceNotFoundException("Incident report not found with id " + reportId));
 
         if (incidentReport.getUser().getId().equals(userId)) {
-            throw new ResourceProcessingException("You cannot vote on your own reports");
+            throw new AccessDeniedException("You cannot vote on your own reports");
         }
 
         boolean alreadyVoted = incidentVoteRepository.existsByReportIdAndUserId(reportId, userId);
@@ -78,6 +79,10 @@ public class IncidentVoteService implements IIncidentVoteService {
 
         IncidentVote incidentVote = incidentVoteRepository.findByReportIdAndUserId(reportId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vote not found for report id " + reportId + " and user id " + userId));
+
+        if(!incidentVote.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("You can only remove your own votes.");
+        }
 
         reCalculateVotes(incidentVote);
 
@@ -141,6 +146,7 @@ public class IncidentVoteService implements IIncidentVoteService {
     @Override
     @Transactional
     public IncidentVoteDto updateVote(Long reportId, Long userId, String voteType) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return incidentVoteRepository.findByReportIdAndUserId(reportId, userId)
                 .map(incidentVote -> {
                     VoteType vote = resolveVoteType(voteType);

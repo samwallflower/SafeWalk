@@ -5,7 +5,6 @@ import com.samwallflower.safewalk.dto.IncidentReportDto;
 import com.samwallflower.safewalk.enums.ReportStatus;
 import com.samwallflower.safewalk.exception.RateLimitExceededException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
-import com.samwallflower.safewalk.exception.ResourceProcessingException;
 import com.samwallflower.safewalk.model.IncidentCategory;
 import com.samwallflower.safewalk.model.IncidentReport;
 import com.samwallflower.safewalk.model.User;
@@ -118,7 +117,7 @@ public class IncidentReportService implements IIncidentReportService {
         incidentReportRepository.delete(incidentReportRepository.findById(id)
                 .map(r -> {
                     if (!r.getUser().getId().equals(userId))
-                        throw new ResourceProcessingException("You are not authorized to delete this incident report");
+                        throw new AccessDeniedException("You are not authorized to delete this incident report");
                     return r;
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("Incident report not found with id: " + id))

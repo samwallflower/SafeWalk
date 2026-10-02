@@ -59,10 +59,17 @@ public class EmergencyController {
         return ResponseEntity.ok(new ApiResponse("Emergencies retrieved successfully for source: " + source, emergencies));
     }
 
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/session/{sessionId}/all")
     public ResponseEntity<ApiResponse> getAllEmergenciesByWalkSessionId(@PathVariable Long sessionId) {
         List<EmergencyDto> emergencies = emergencyService.getAllEmergenciesByWalkSessionId(sessionId);
+        return ResponseEntity.ok(new ApiResponse("Emergencies retrieved successfully for session: " + sessionId, emergencies));
+    }
+
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping("/session/{sessionId}/user/{userId}/all")
+    public ResponseEntity<ApiResponse> getAllEmergenciesByWalkSessionIdAndUserId(@PathVariable Long sessionId, @PathVariable Long userId) {
+        List<EmergencyDto> emergencies = emergencyService.getAllEmegenciesByWalkSessionIdAndUserId(sessionId, userId);
         return ResponseEntity.ok(new ApiResponse("Emergencies retrieved successfully for session: " + sessionId, emergencies));
     }
 
@@ -74,16 +81,31 @@ public class EmergencyController {
     }
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping("/{id}/user/{userId}/emergency")
+    public ResponseEntity<ApiResponse> getEmergencyByIdAndUserId(@PathVariable Long id, @PathVariable Long userId) {
+        EmergencyDto emergency = emergencyService.getEmergencyByIdAndUserId(id, userId);
+        return ResponseEntity.ok(new ApiResponse("Emergency retrieved successfully", emergency));
+    }
+
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @PutMapping("/{id}/emergency/session/{sessionId}/user/{userId}/resolve")
     public ResponseEntity<ApiResponse> resolveEmergency(@PathVariable Long id, @PathVariable Long sessionId, @PathVariable Long userId) {
         EmergencyDto emergency = emergencyService.resolveEmergency(id, sessionId, userId);
         return ResponseEntity.ok(new ApiResponse("Emergency resolved successfully", emergency));
     }
 
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/session/{sessionId}/active")
     public ResponseEntity<ApiResponse> getActiveEmergencyByWalkSessionId(@PathVariable Long sessionId) {
         EmergencyDto emergency = emergencyService.getActiveEmergencyByWalkSessionId(sessionId);
+        return ResponseEntity.ok(new ApiResponse("Active emergency retrieved successfully", emergency));
+    }
+
+
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping("/session/{sessionId}/user/{userId}/active")
+    public ResponseEntity<ApiResponse> getActiveEmergencyByWalkSessionIdAndUserId(@PathVariable Long sessionId, @PathVariable Long userId) {
+        EmergencyDto emergency = emergencyService.getActiveEmergencyByWalkSessionIdAndUserId(sessionId, userId);
         return ResponseEntity.ok(new ApiResponse("Active emergency retrieved successfully", emergency));
     }
 

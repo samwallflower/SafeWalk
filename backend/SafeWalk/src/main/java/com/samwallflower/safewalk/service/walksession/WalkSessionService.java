@@ -17,6 +17,7 @@ import com.samwallflower.safewalk.security.util.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -94,7 +95,7 @@ public class WalkSessionService implements IWalkSessionService {
             throw new ResourceProcessingException("WalkSession already completed with id: " + id);
 
         if(!walkSession.getUser().getId().equals(user.getId())) {
-            throw new ResourceProcessingException("Walk Session with id: "+ id + "does not belong to user with id: "+ userId);
+            throw new AccessDeniedException("Walk Session with id: "+ id + "does not belong to user with id: "+ userId);
         }
         walkSession.setLastKnownLatitude(request.getLatitude());
         walkSession.setLastKnownLongitude(request.getLongitude());
@@ -141,7 +142,7 @@ public class WalkSessionService implements IWalkSessionService {
         return walkSessionRepository.findById(id)
                 .map(walkSession->{
                     if(!walkSession.getUser().getId().equals(userId)){
-                        throw new ResourceProcessingException("You are not allowed to end this session. This session does not belong to you.");
+                        throw new AccessDeniedException("You are not allowed to end this session. This session does not belong to you.");
                     }
                     WalkSession saved = walkSessionRepository.save(endSession(walkSession));
                     return convertToDto(saved);
@@ -198,7 +199,7 @@ public class WalkSessionService implements IWalkSessionService {
         WalkSession walkSession = walkSessionRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id: " + id));
         Route route = routeRepository.findById(walkSession.getRoute().getId()).orElseThrow(()-> new ResourceNotFoundException("Route not found with id: "+ id));
         if(!walkSession.getUser().getId().equals(userId))
-            throw new ResourceProcessingException("Walk session with id: "+ id + " does not belong to user with id: "+ userId);
+            throw new AccessDeniedException("Walk session with id: "+ id + " does not belong to user with id: "+ userId);
 
         user.getWalkSessions().remove(walkSession);
         userRepository.save(user);
@@ -237,6 +238,7 @@ public class WalkSessionService implements IWalkSessionService {
 
     @Override
     public WalkSessionDto getWalkSessionByRouteIdAndUserId(Long routeId, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return walkSessionRepository.findByRouteIdAndUserId(routeId,userId)
                 .map(this::convertToDto)
                 .orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with route id: "+ routeId + " and user id: "+ userId));

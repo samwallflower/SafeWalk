@@ -13,6 +13,8 @@ import com.samwallflower.safewalk.security.util.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,7 +27,9 @@ public class EmergencyContactService implements IEmergencyContactService{
     private final EmergencyContactRepository emergencyContactRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
-    private final int MAX_EMERGENCY_CONTACTS=5;
+
+    @Value("${app.emergency-contact.add.max-count}")
+    private int maxEmergencyContacts;
 
     // before we add emergency contacts we must make sure the user has less than 5 contacts
     // otherwise someone might add 100 emergency contacts and spam the system
@@ -41,8 +45,8 @@ public class EmergencyContactService implements IEmergencyContactService{
 
         List<EmergencyContact> userContacts = user.getEmergencyContacts();
 
-        if (userContacts.size() >= MAX_EMERGENCY_CONTACTS) {
-            throw new ResourceProcessingException("User with id: " + userId + " already has 5 emergency contacts. Cannot add more. Try deleting some first or updating existing ones.");
+        if (userContacts.size() >= maxEmergencyContacts) {
+            throw new ResourceProcessingException("User with id: " + userId + " already has " + maxEmergencyContacts + " emergency contacts. Cannot add more. Try deleting some first or updating existing ones.");
         }
 
         EmergencyContact contact = new EmergencyContact();
@@ -57,9 +61,7 @@ public class EmergencyContactService implements IEmergencyContactService{
     @Override
     public List<EmergencyContactDto> getEmergencyContactsByUserId(Long userId) {
         SecurityUtils.checkOwnershipOrAdmin(userId);
-        User user = userRepository.findById(userId).orElseThrow(() ->
-                new ResourceNotFoundException("User not found with id: " + userId));
-        return user.getEmergencyContacts()
+        return emergencyContactRepository.findByUserId(userId)
                 .stream()
                 .map(this::convertToDto)
                 .toList();
@@ -119,7 +121,7 @@ public class EmergencyContactService implements IEmergencyContactService{
         EmergencyContact contact = emergencyContactRepository.findById(contactId).orElseThrow(() ->
                 new ResourceNotFoundException("Emergency contact not found with id: " + contactId));
         if (!contact.getUser().getId().equals(userId)) {
-            throw new ResourceNotFoundException("Emergency contact with id: " + contactId + " does not belong to user with id: " + userId);
+            throw new AccessDeniedException("Emergency contact with id: " + contactId + " does not belong to user with id: " + userId);
         }
         return contact;
     }

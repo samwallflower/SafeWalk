@@ -21,6 +21,7 @@ public interface IEmergencyService {
     List<EmergencyDto> getAllEmergencies();
     List<EmergencyDto> getAllEmergenciesByTriggerSource(String source);
     List<EmergencyDto> getAllEmergenciesByWalkSessionId(Long sessionId);
+    List<EmergencyDto> getAllEmegenciesByWalkSessionIdAndUserId(Long sessionId, Long userId);
 
     EmergencyDto resolveEmergency(Long id, Long sessionId, Long userId);
 
@@ -28,7 +29,12 @@ public interface IEmergencyService {
 
     EmergencyDto getEmergencyById(Long id);
 
+    EmergencyDto getEmergencyByIdAndUserId(Long id, Long userId);
+
     EmergencyDto getActiveEmergencyByWalkSessionId(Long sessionId);
+
+    EmergencyDto getActiveEmergencyByWalkSessionIdAndUserId(Long sessionId, Long userId);
+
     long countEmergencyByTriggerSource(String source);
 
     EmergencyDto updateEmergencyResolveById(Long id,Boolean resolved );
