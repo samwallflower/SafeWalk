@@ -107,7 +107,7 @@ public class EmergencyService implements IEmergencyService{
     }
 
     @Override
-    public List<EmergencyDto> getAllEmegenciesByWalkSessionIdAndUserId(Long sessionId, Long userId) {
+    public List<EmergencyDto> getAllEmergenciesByWalkSessionIdAndUserId(Long sessionId, Long userId) {
         SecurityUtils.checkOwnershipOrAdmin(userId);
         WalkSession session = walkSessionRepository.findById(sessionId)
                 .orElseThrow(()-> new ResourceNotFoundException("Walk session not found with id: " + sessionId));
@@ -119,14 +119,10 @@ public class EmergencyService implements IEmergencyService{
                 .toList();
     }
 
-    /**
-     *
-     * @param sessionId
-     * @param userId
-     */
     @Override
     @Transactional
     public EmergencyDto resolveEmergency(Long id, Long sessionId, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         WalkSession session = walkSessionRepository.findById(sessionId)
                 .orElseThrow(()-> new ResourceNotFoundException("Walk session not found with id: " + sessionId));
 
@@ -229,7 +225,6 @@ public class EmergencyService implements IEmergencyService{
     // we would like to make sure the user cannot call for emergencies that particularly
     // does not belong to them
     // we should throw an exception if the emergency does not belong to the user
-    // how to do that ?
     @Override
     public EmergencyDto getEmergencyByIdAndUserId(Long id, Long userId) {
         SecurityUtils.checkOwnershipOrAdmin(userId);

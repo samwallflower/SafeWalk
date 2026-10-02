@@ -69,7 +69,7 @@ public class EmergencyController {
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/session/{sessionId}/user/{userId}/all")
     public ResponseEntity<ApiResponse> getAllEmergenciesByWalkSessionIdAndUserId(@PathVariable Long sessionId, @PathVariable Long userId) {
-        List<EmergencyDto> emergencies = emergencyService.getAllEmegenciesByWalkSessionIdAndUserId(sessionId, userId);
+        List<EmergencyDto> emergencies = emergencyService.getAllEmergenciesByWalkSessionIdAndUserId(sessionId, userId);
         return ResponseEntity.ok(new ApiResponse("Emergencies retrieved successfully for session: " + sessionId, emergencies));
     }
 
