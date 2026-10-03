@@ -28,6 +28,7 @@ public class GoogleMapsClient {
                     .origin(new LatLng(originLat,originLng))
                     .destination(new LatLng(destinationLat, destinationLng))
                     .alternatives(true)
+                    .mode(TravelMode.WALKING)
                     .await();
         }catch(Exception e){
             log.error(e.getMessage());

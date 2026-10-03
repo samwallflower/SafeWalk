@@ -36,7 +36,6 @@ class IncidentReportServiceTest {
 
     @Mock private IncidentReportRepository incidentReportRepository;
     @Mock private IncidentCategoryRepository categoryRepository;
-    @Mock private IncidentVoteRepository incidentVoteRepository;
     @Mock private UserRepository userRepository;
 
     @InjectMocks
@@ -45,7 +44,7 @@ class IncidentReportServiceTest {
     @BeforeEach
     void setUp() {
         service = new IncidentReportService(
-                incidentReportRepository, categoryRepository, incidentVoteRepository,
+                incidentReportRepository, categoryRepository,
                 userRepository, new ModelMapper()
         );
     }
