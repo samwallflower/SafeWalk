@@ -9,7 +9,11 @@ import com.samwallflower.safewalk.repository.EmergencyContactRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.request.emergencycontact.AddEmergencyContactRequest;
 import com.samwallflower.safewalk.request.emergencycontact.UpdateEmergencyContactRequest;
+import com.samwallflower.safewalk.support.AsAdmin;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.util.ReflectionTestUtils;
+import com.samwallflower.safewalk.support.AuthenticatedAs;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@AsAdmin
 class EmergencyContactServiceTest {
 
     @Mock private EmergencyContactRepository emergencyContactRepository;
@@ -38,6 +43,7 @@ class EmergencyContactServiceTest {
     @BeforeEach
     void setUp() {
         service = new EmergencyContactService(emergencyContactRepository, userRepository, new ModelMapper());
+        ReflectionTestUtils.setField(service, "maxEmergencyContacts", 5);
     }
 
     private User buildUser(Long id, List<EmergencyContact> contacts) {
@@ -146,7 +152,7 @@ class EmergencyContactServiceTest {
                 buildContact(11L, null, "Dad", "222")
         ));
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(emergencyContactRepository.findByUserId(1L)).thenReturn(user.getEmergencyContacts());
 
         List<EmergencyContactDto> result = service.getEmergencyContactsByUserId(1L);
 
@@ -156,17 +162,18 @@ class EmergencyContactServiceTest {
     }
 
     @Test
-    void getEmergencyContactsByUserId_throws_whenUserNotFound() {
-        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+    void getEmergencyContactsByUserId_throws_whenCallerIsDifferentUser() {
+        AuthenticatedAs.user(2L);
 
-        assertThatThrownBy(() -> service.getEmergencyContactsByUserId(99L))
-                .isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> service.getEmergencyContactsByUserId(1L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(emergencyContactRepository, never()).findByUserId(any());
     }
 
     @Test
     void getEmergencyContactsByUserId_returnsEmptyList_whenNoContacts() {
-        User user = buildUser(1L, List.of());
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(emergencyContactRepository.findByUserId(1L)).thenReturn(List.of());
 
         List<EmergencyContactDto> result = service.getEmergencyContactsByUserId(1L);
 
@@ -205,7 +212,7 @@ class EmergencyContactServiceTest {
 
         // requesting user (1L) does not own this contact (owned by 2L)
         assertThatThrownBy(() -> service.getEmergencyContactById(1L, 10L))
-                .isInstanceOf(ResourceNotFoundException.class)
+                .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("does not belong");
     }
 
@@ -231,7 +238,7 @@ class EmergencyContactServiceTest {
         when(emergencyContactRepository.findById(10L)).thenReturn(Optional.of(contact));
 
         assertThatThrownBy(() -> service.deleteEmergencyContact(1L, 10L))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(AccessDeniedException.class);
 
         verify(emergencyContactRepository, never()).delete(any());
     }
@@ -267,7 +274,7 @@ class EmergencyContactServiceTest {
         UpdateEmergencyContactRequest request = new UpdateEmergencyContactRequest();
 
         assertThatThrownBy(() -> service.updateEmergencyContact(1L, 10L, request))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(AccessDeniedException.class);
 
         verify(emergencyContactRepository, never()).save(any());
     }

@@ -12,7 +12,9 @@ import com.samwallflower.safewalk.model.User;
 import com.samwallflower.safewalk.repository.IncidentReportRepository;
 import com.samwallflower.safewalk.repository.IncidentVoteRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
+import com.samwallflower.safewalk.support.AsAdmin;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,6 +30,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@AsAdmin
 class IncidentVoteServiceTest {
 
     @Mock private IncidentVoteRepository incidentVoteRepository;
@@ -88,7 +91,7 @@ class IncidentVoteServiceTest {
         when(incidentReportRepository.findById(10L)).thenReturn(Optional.of(report));
 
         assertThatThrownBy(() -> service.castVote(1L, 10L, "upvote"))
-                .isInstanceOf(ResourceProcessingException.class)
+                .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("own reports");
 
         verify(incidentVoteRepository, never()).save(any());
@@ -194,6 +197,9 @@ class IncidentVoteServiceTest {
         vote.setId(50L);
         vote.setVoteType(VoteType.UPVOTE);
         vote.setReport(report);
+        User voter = new User();
+        voter.setId(1L);
+        vote.setUser(voter);
 
         when(incidentVoteRepository.findByReportIdAndUserId(10L, 1L)).thenReturn(Optional.of(vote));
 
@@ -210,6 +216,9 @@ class IncidentVoteServiceTest {
         vote.setId(50L);
         vote.setVoteType(VoteType.DOWNVOTE);
         vote.setReport(report);
+        User voter = new User();
+        voter.setId(1L);
+        vote.setUser(voter);
 
         when(incidentVoteRepository.findByReportIdAndUserId(10L, 1L)).thenReturn(Optional.of(vote));
 
@@ -226,6 +235,9 @@ class IncidentVoteServiceTest {
         vote.setId(50L);
         vote.setVoteType(VoteType.DOWNVOTE);
         vote.setReport(report);
+        User voter = new User();
+        voter.setId(1L);
+        vote.setUser(voter);
 
         when(incidentVoteRepository.findByReportIdAndUserId(10L, 1L)).thenReturn(Optional.of(vote));
 

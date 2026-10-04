@@ -17,7 +17,9 @@ import com.samwallflower.safewalk.service.emergencyauthority.IEmergencyAuthority
 import com.samwallflower.safewalk.service.notification.INotificationService;
 import com.samwallflower.safewalk.websocket.connection.WalkSessionConnectionRegistry;
 import com.samwallflower.safewalk.websocket.message.AlertMessage;
+import com.samwallflower.safewalk.support.AsAdmin;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -35,6 +37,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@AsAdmin
 class EmergencyServiceTest {
 
     @Mock private WalkSessionRepository walkSessionRepository;
@@ -116,7 +119,7 @@ class EmergencyServiceTest {
         when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
 
         assertThatThrownBy(() -> service.triggerEmergencyByUser(10L, 999L))
-                .isInstanceOf(ResourceProcessingException.class);
+                .isInstanceOf(AccessDeniedException.class);
 
         verifyNoInteractions(twilioClient, emailService);
     }
@@ -215,7 +218,7 @@ class EmergencyServiceTest {
         when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
 
         assertThatThrownBy(() -> service.resolveEmergency(5L, 10L, 999L))
-                .isInstanceOf(ResourceProcessingException.class);
+                .isInstanceOf(AccessDeniedException.class);
     }
 
     @Test
