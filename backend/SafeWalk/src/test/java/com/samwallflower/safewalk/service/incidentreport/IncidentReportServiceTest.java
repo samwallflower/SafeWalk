@@ -14,7 +14,10 @@ import com.samwallflower.safewalk.repository.IncidentVoteRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.request.incidentreport.AddIncidentReportRequest;
 import com.samwallflower.safewalk.request.incidentreport.UpdateIncidentReportRequest;
+import com.samwallflower.safewalk.support.AsAdmin;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,6 +35,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@AsAdmin
 class IncidentReportServiceTest {
 
     @Mock private IncidentReportRepository incidentReportRepository;
@@ -47,6 +51,7 @@ class IncidentReportServiceTest {
                 incidentReportRepository, categoryRepository,
                 userRepository, new ModelMapper()
         );
+        ReflectionTestUtils.setField(service, "report_add_time_limit_in_mins", 5);
     }
 
     private IncidentCategory buildCategory(Long id, String name, int weight) {
@@ -205,7 +210,7 @@ class IncidentReportServiceTest {
         UpdateIncidentReportRequest request = new UpdateIncidentReportRequest();
 
         assertThatThrownBy(() -> service.updateIncidentReport(request, 999L, 1L)) // different user
-                .isInstanceOf(ResourceProcessingException.class)
+                .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("not authorized");
 
         verify(incidentReportRepository, never()).save(any());
@@ -251,7 +256,7 @@ class IncidentReportServiceTest {
         when(incidentReportRepository.findById(1L)).thenReturn(Optional.of(existing));
 
         assertThatThrownBy(() -> service.deleteIncidentReportById(1L, 999L))
-                .isInstanceOf(ResourceProcessingException.class);
+                .isInstanceOf(AccessDeniedException.class);
 
         verify(incidentReportRepository, never()).delete(any());
     }

@@ -14,7 +14,9 @@ import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.repository.WalkSessionRepository;
 import com.samwallflower.safewalk.request.walksession.AddWalkSessionRequest;
 import com.samwallflower.safewalk.request.walksession.UpdateWalkSession;
+import com.samwallflower.safewalk.support.AsAdmin;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,6 +35,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@AsAdmin
 class WalkSessionServiceTest {
 
     @Mock private WalkSessionRepository walkSessionRepository;
@@ -234,7 +237,7 @@ class WalkSessionServiceTest {
         UpdateWalkSession request = new UpdateWalkSession();
 
         assertThatThrownBy(() -> service.updateLocation(5L, 2L, request))
-                .isInstanceOf(ResourceProcessingException.class)
+                .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("does not belong");
     }
 
@@ -315,7 +318,7 @@ class WalkSessionServiceTest {
         when(walkSessionRepository.findById(5L)).thenReturn(Optional.of(session));
 
         assertThatThrownBy(() -> service.endSessionByIdAndUserId(5L, 999L))
-                .isInstanceOf(ResourceProcessingException.class)
+                .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("not allowed");
 
         verify(walkSessionRepository, never()).save(any());
@@ -353,7 +356,7 @@ class WalkSessionServiceTest {
         when(routeRepository.findById(10L)).thenReturn(Optional.of(route));
 
         assertThatThrownBy(() -> service.deleteWalkSessionById(5L, 999L))
-                .isInstanceOf(ResourceProcessingException.class);
+                .isInstanceOf(AccessDeniedException.class);
 
         verify(walkSessionRepository, never()).delete(any());
     }

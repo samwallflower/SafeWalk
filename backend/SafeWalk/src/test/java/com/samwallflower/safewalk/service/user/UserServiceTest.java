@@ -10,6 +10,7 @@ import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.request.user.UserRegisterRequest;
 import com.samwallflower.safewalk.request.user.UserUpdateRequest;
 import com.samwallflower.safewalk.service.auth.AuthVerificationService;
+import com.samwallflower.safewalk.support.AsAdmin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@AsAdmin
 class UserServiceTest {
 
     @Mock private UserRepository userRepository;
