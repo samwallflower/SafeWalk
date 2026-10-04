@@ -23,4 +23,10 @@ public class RouteRecommendationRequest {
     @NotNull @DecimalMin(value = "-180.0", message = "Destination longitude must be between -180 and 180")
     @DecimalMax(value = "180.0", message = "Destination longitude must be between -180 and 180")
     private Double destinationLongitude;
+
+    // Experiment-only overrides. Ignored unless app.eval.enabled=true.
+    private Double bufferMeters;
+    private Double penaltyMetersPerPoint;
+    /** CATEGORY (default: category severity points) or UNIFORM (every incident = 1 point). */
+    private String weighting;
 }

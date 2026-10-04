@@ -243,4 +243,80 @@ public class RoutingServiceTest {
         assertThat(result).hasSize(2);
         assertThat(result).allMatch(dto -> dto.getRouteRequestId().equals("group-1"));
     }
+
+    // ---- experiment mode (app.eval.enabled) ----
+
+    private void stubOneIncident(int severityWeight) {
+        IncidentCategory cat = new IncidentCategory();
+        cat.setSeverityWeight(severityWeight);
+        IncidentReport incident = new IncidentReport();
+        incident.setId(7L);
+        incident.setCategory(cat);
+        when(googleMapsClient.getAlternativeRoutes(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
+                .thenReturn(List.of(new GoogleRouteCandidate(REAL_POLYLINE, 1000.0)));
+        when(incidentReportRepository.findNearBy(anyDouble(), anyDouble(), anyDouble()))
+                .thenReturn(List.of(incident));
+        when(routeRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+    }
+
+    @Test
+    void evalOff_overridesIgnored_andNoExtraFields() {
+        stubOneIncident(20);
+        RouteRecommendationRequest request = buildRequest();
+        request.setBufferMeters(999.0);
+        request.setPenaltyMetersPerPoint(1.0);
+        request.setWeighting("UNIFORM");
+
+        RouteDto dto = routingService.recommendRoutes(request).get(0);
+
+        assertThat(dto.getSafetyPenaltyMeters()).isEqualTo(1000.0); // 20 * 50, defaults
+        assertThat(dto.getGoogleIndex()).isNull();
+        assertThat(dto.getIncidentCount()).isNull();
+        assertThat(dto.getIncidentIds()).isNull();
+    }
+
+    @Test
+    void evalOn_noOverrides_sameAsDefaults_andReportsIncidents() {
+        ReflectionTestUtils.setField(routingService, "evalEnabled", true);
+        stubOneIncident(20);
+
+        RouteDto dto = routingService.recommendRoutes(buildRequest()).get(0);
+
+        assertThat(dto.getSafetyPenaltyMeters()).isEqualTo(1000.0);
+        assertThat(dto.getGoogleIndex()).isEqualTo(0);
+        assertThat(dto.getIncidentCount()).isEqualTo(1);
+        assertThat(dto.getIncidentIds()).containsExactly(7L);
+    }
+
+    @Test
+    void evalOn_overridesApplied() {
+        ReflectionTestUtils.setField(routingService, "evalEnabled", true);
+        stubOneIncident(20);
+        RouteRecommendationRequest request = buildRequest();
+        request.setBufferMeters(250.0);
+        request.setPenaltyMetersPerPoint(10.0);
+        request.setWeighting("UNIFORM");
+
+        RouteDto dto = routingService.recommendRoutes(request).get(0);
+
+        assertThat(dto.getSafetyPenaltyMeters()).isEqualTo(10.0); // 1 point * 10 m
+        org.mockito.Mockito.verify(incidentReportRepository, org.mockito.Mockito.atLeastOnce())
+                .findNearBy(anyDouble(), anyDouble(), org.mockito.ArgumentMatchers.eq(250.0));
+    }
+
+    @Test
+    void evalOn_googleIndexKeepsGoogleOrder_afterRanking() {
+        ReflectionTestUtils.setField(routingService, "evalEnabled", true);
+        when(googleMapsClient.getAlternativeRoutes(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
+                .thenReturn(List.of(new GoogleRouteCandidate(REAL_POLYLINE, 1500.0),
+                        new GoogleRouteCandidate(REAL_POLYLINE, 1000.0)));
+        when(incidentReportRepository.findNearBy(anyDouble(), anyDouble(), anyDouble())).thenReturn(List.of());
+        when(routeRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+
+        List<RouteDto> result = routingService.recommendRoutes(buildRequest());
+
+        assertThat(result.get(0).getActualDistanceMeters()).isEqualTo(1000.0);
+        assertThat(result.get(0).getGoogleIndex()).isEqualTo(1);
+        assertThat(result.get(1).getGoogleIndex()).isEqualTo(0);
+    }
 }
