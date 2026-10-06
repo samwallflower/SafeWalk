@@ -59,6 +59,7 @@ public interface IncidentReportRepository extends JpaRepository<IncidentReport, 
     );
 
     Page<IncidentReport> findByCategoryId(Long categoryId, Pageable pageable);
+    Page<IncidentReport> findByStatus(ReportStatus status, Pageable pageable);
 
     //Finds the most recent report by user
     Optional<IncidentReport> findTopByUserIdOrderByTimestampDesc(Long userId);

@@ -2,6 +2,7 @@ package com.samwallflower.safewalk.controller;
 
 import com.samwallflower.safewalk.dto.HeatMapPointDto;
 import com.samwallflower.safewalk.dto.IncidentReportDto;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.request.incidentreport.AddIncidentReportRequest;
 import com.samwallflower.safewalk.request.incidentreport.UpdateIncidentReportRequest;
 import com.samwallflower.safewalk.response.ApiResponse;
@@ -177,5 +178,11 @@ public class IncidentReportController {
     public ResponseEntity<ApiResponse> getActiveIncidentReportsByTimeRange(@RequestParam String startTime, @RequestParam String endTime) {
         List<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByTimeRangeAndStatus(startTime, endTime, "ACTIVE");
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
+    }
+
+    @GetMapping("/page/active/report")
+    public ResponseEntity<ApiResponse> getActiveIncidentReportsPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int pageSize) {
+        PageResponse<IncidentReportDto> incidentReportsPage = incidentReportService.getActiveIncidentReportsPage(page, pageSize);
+        return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReportsPage));
     }
 }

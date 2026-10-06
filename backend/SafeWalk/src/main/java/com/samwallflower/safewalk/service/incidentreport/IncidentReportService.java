@@ -2,6 +2,7 @@ package com.samwallflower.safewalk.service.incidentreport;
 
 import com.samwallflower.safewalk.dto.HeatMapPointDto;
 import com.samwallflower.safewalk.dto.IncidentReportDto;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.enums.ReportStatus;
 import com.samwallflower.safewalk.exception.RateLimitExceededException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
@@ -17,6 +18,9 @@ import com.samwallflower.safewalk.security.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -38,6 +42,9 @@ public class IncidentReportService implements IIncidentReportService {
 
     @Value("${app.incident.add.report-time-limit-in-mins}")
     private int report_add_time_limit_in_mins;
+
+    @Value("${DEFAULT_PAGE_SIZE}")
+    private int DEFAULT_PAGE_SIZE;
 
     // Rate Limiter -> one person can only add a report every 5 minutes
     // checkOwnershipOrAdmin checks whether the given user id belongs to the logged in user
@@ -238,6 +245,14 @@ public class IncidentReportService implements IIncidentReportService {
                         parseDateTime(endTime), reportStatus).stream()
                 .map(this::convertToDto)
                 .toList();
+    }
+
+    @Override
+    public PageResponse<IncidentReportDto> getActiveIncidentReportsPage(int page, int pageSize) {
+        Pageable pageable = PageRequest.of(Math.max(page,0),
+                Math.min(Math.max(pageSize,1), DEFAULT_PAGE_SIZE));
+        Sort.by(Sort.Direction.DESC, "timestamp");
+        return PageResponse.from(incidentReportRepository.findByStatus(ReportStatus.ACTIVE, pageable).map(this::convertToDto));
     }
 
     @Override

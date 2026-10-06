@@ -2,6 +2,7 @@ package com.samwallflower.safewalk.service.incidentreport;
 
 import com.samwallflower.safewalk.dto.HeatMapPointDto;
 import com.samwallflower.safewalk.dto.IncidentReportDto;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.model.IncidentReport;
 import com.samwallflower.safewalk.request.incidentreport.AddIncidentReportRequest;
 import com.samwallflower.safewalk.request.incidentreport.UpdateIncidentReportRequest;
@@ -28,6 +29,8 @@ public interface IIncidentReportService {
     List<IncidentReportDto> getIncidentReportsByUserIdAndStatus(Long userId, String status);
     List<IncidentReportDto> getIncidentReportsByLocationAndStatus(Double latitude, Double longitude, Double radiusMeters, String status);
     List<IncidentReportDto> getIncidentReportsByTimeRangeAndStatus(String startTime, String endTime, String status);
+
+    PageResponse<IncidentReportDto> getActiveIncidentReportsPage(int page, int pageSize);
 
     List<IncidentReportDto> getNearByIncidentReports(double latitude, double longitude, double radiusMeters);
     IncidentReportDto updateStatus(Long id, String status);
