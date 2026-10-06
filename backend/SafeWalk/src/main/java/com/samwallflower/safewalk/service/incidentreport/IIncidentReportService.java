@@ -38,4 +38,6 @@ public interface IIncidentReportService {
     List<HeatMapPointDto> getHeatMapPoints(double latitude, double longitude, double radiusMeters);
 
     IncidentReportDto convertToDto(IncidentReport incidentReport);
+
+    long countAllIncidentReports();
 }

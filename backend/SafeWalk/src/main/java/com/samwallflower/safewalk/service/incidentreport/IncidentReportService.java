@@ -250,8 +250,8 @@ public class IncidentReportService implements IIncidentReportService {
     @Override
     public PageResponse<IncidentReportDto> getActiveIncidentReportsPage(int page, int pageSize) {
         Pageable pageable = PageRequest.of(Math.max(page,0),
-                Math.min(Math.max(pageSize,1), DEFAULT_PAGE_SIZE));
-        Sort.by(Sort.Direction.DESC, "timestamp");
+                Math.min(Math.max(pageSize,1), DEFAULT_PAGE_SIZE),
+                Sort.by(Sort.Direction.DESC, "timestamp"));
         return PageResponse.from(incidentReportRepository.findByStatus(ReportStatus.ACTIVE, pageable).map(this::convertToDto));
     }
 
@@ -290,6 +290,11 @@ public class IncidentReportService implements IIncidentReportService {
     @Override
     public IncidentReportDto convertToDto(IncidentReport incidentReport) {
         return modelMapper.map(incidentReport, IncidentReportDto.class);
+    }
+
+    @Override
+    public long countAllIncidentReports() {
+        return incidentReportRepository.count();
     }
 
     private ReportStatus resolveStatus(String status) {

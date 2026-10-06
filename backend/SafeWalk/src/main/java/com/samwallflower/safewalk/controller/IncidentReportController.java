@@ -185,4 +185,10 @@ public class IncidentReportController {
         PageResponse<IncidentReportDto> incidentReportsPage = incidentReportService.getActiveIncidentReportsPage(page, pageSize);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReportsPage));
     }
+
+    @GetMapping("/count/report")
+    public ResponseEntity<ApiResponse> countAllIncidentReports() {
+        long count = incidentReportService.countAllIncidentReports();
+        return ResponseEntity.ok(new ApiResponse("Incident report count retrieved successfully", count));
+    }
 }
