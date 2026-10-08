@@ -111,4 +111,18 @@ public class WalkSessionController {
         return ResponseEntity.ok(new ApiResponse("WalkSessions found successfully", sessions));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping("/count/by-user-id-and-status/user/{userId}/session")
+    public ResponseEntity<ApiResponse> countWalkSessionsByUserIdAndStatus(@PathVariable Long userId, @RequestParam String status){
+        long count = walkSessionService.countWalkSessionsByUserIdAndStatus(userId,status);
+        return ResponseEntity.ok(new ApiResponse("WalkSessions count found successfully", count));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/count/by-status/session")
+    public ResponseEntity<ApiResponse> countWalkSessionsByStatus(@RequestParam String status){
+        long count = walkSessionService.countAllByStatus(status);
+        return ResponseEntity.ok(new ApiResponse("WalkSessions count found successfully", count));
+    }
+
 }

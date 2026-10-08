@@ -116,6 +116,7 @@ public class EmergencyController {
         return ResponseEntity.ok(new ApiResponse("Count of emergencies retrieved successfully for source: " + source, count));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/count/by-walk-session-user-id-and-resolved/user/{walkSessionUserId}/emergency")
     public ResponseEntity<ApiResponse> countEmergencyByWalkSessionUserIdAndResolved(@PathVariable Long walkSessionUserId, @RequestParam Boolean resolved) {
         long count = emergencyService.countEmergencyByWalkSessionUserIdAndResolved(walkSessionUserId, resolved);

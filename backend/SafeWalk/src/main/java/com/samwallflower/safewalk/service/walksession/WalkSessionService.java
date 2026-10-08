@@ -237,6 +237,17 @@ public class WalkSessionService implements IWalkSessionService {
     }
 
     @Override
+    public long countWalkSessionsByUserIdAndStatus(Long userId, String status) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+        return walkSessionRepository.countByUserIdAndStatus(userId, resolveStatus(status));
+    }
+
+    @Override
+    public long countAllByStatus(String status) {
+        return walkSessionRepository.countAllByStatus(resolveStatus(status));
+    }
+
+    @Override
     public WalkSessionDto getWalkSessionByRouteIdAndUserId(Long routeId, Long userId) {
         SecurityUtils.checkOwnershipOrAdmin(userId);
         return walkSessionRepository.findByRouteIdAndUserId(routeId,userId)

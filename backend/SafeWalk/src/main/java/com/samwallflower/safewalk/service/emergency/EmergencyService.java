@@ -306,6 +306,7 @@ public class EmergencyService implements IEmergencyService{
 
     @Override
     public long countEmergencyByWalkSessionUserIdAndResolved(Long walkSessionUserId, Boolean resolved) {
+        SecurityUtils.checkOwnershipOrAdmin(walkSessionUserId);
         return emergencyRepository.countEmergenciesByWalkSession_User_IdAndResolved(walkSessionUserId, resolved);
     }
 

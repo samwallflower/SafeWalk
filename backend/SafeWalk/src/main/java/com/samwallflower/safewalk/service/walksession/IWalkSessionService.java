@@ -21,6 +21,9 @@ public interface IWalkSessionService {
     void deleteWalkSessionById(Long id, Long userId);
     WalkSessionDto updateWalkSessionStatus(Long id, String status);
 
+    long countWalkSessionsByUserIdAndStatus(Long userId, String status);
+    long countAllByStatus(String status);
+
     WalkSessionDto getWalkSessionByRouteIdAndUserId(Long routeId, Long userId);
     WalkSessionDto convertToDto(WalkSession walkSession);
 
