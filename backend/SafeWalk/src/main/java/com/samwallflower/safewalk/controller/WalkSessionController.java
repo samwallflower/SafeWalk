@@ -125,4 +125,11 @@ public class WalkSessionController {
         return ResponseEntity.ok(new ApiResponse("WalkSessions count found successfully", count));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping("/by-user-id-and-status/user/{userId}/session")
+    public ResponseEntity<ApiResponse> getWalkSessionByUserIdAndStatus(@PathVariable Long userId, @RequestParam String status){
+        List<WalkSessionDto> sessions = walkSessionService.getWalkSessionByUserIdAndStatus(userId, status);
+        return ResponseEntity.ok(new ApiResponse("WalkSessions found successfully", sessions));
+    }
+
 }

@@ -18,6 +18,7 @@ public interface IWalkSessionService {
     List<WalkSessionDto> getAllWalkSession();
     List<WalkSessionDto> getWalkSessionByStatus(String status);
     List<WalkSessionDto> getWalkSessionByRouteId(Long routeId);
+    List<WalkSessionDto> getWalkSessionByUserIdAndStatus(Long userId, String status);
     void deleteWalkSessionById(Long id, Long userId);
     WalkSessionDto updateWalkSessionStatus(Long id, String status);
 

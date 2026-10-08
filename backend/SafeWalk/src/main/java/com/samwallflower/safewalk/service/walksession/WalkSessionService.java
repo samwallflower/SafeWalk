@@ -192,6 +192,15 @@ public class WalkSessionService implements IWalkSessionService {
     }
 
     @Override
+    public List<WalkSessionDto> getWalkSessionByUserIdAndStatus(Long userId, String status) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+        return walkSessionRepository.findByUserIdAndStatus(userId, resolveStatus(status))
+                .stream()
+                .map(this::convertToDto)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public void deleteWalkSessionById(Long id, Long userId) {
         SecurityUtils.checkOwnershipOrAdmin(userId);
