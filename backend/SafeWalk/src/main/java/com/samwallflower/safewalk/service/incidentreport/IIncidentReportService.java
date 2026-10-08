@@ -3,7 +3,6 @@ package com.samwallflower.safewalk.service.incidentreport;
 import com.samwallflower.safewalk.dto.HeatMapPointDto;
 import com.samwallflower.safewalk.dto.IncidentReportDto;
 import com.samwallflower.safewalk.dto.PageResponse;
-import com.samwallflower.safewalk.enums.ReportStatus;
 import com.samwallflower.safewalk.model.IncidentReport;
 import com.samwallflower.safewalk.request.incidentreport.AddIncidentReportRequest;
 import com.samwallflower.safewalk.request.incidentreport.UpdateIncidentReportRequest;
@@ -49,4 +48,10 @@ public interface IIncidentReportService {
     long countIncidentReportsByUserId(Long userId);
     long countIncidentReportsByStatus(String status);
     long countIncidentReportsByStatusAndUserId(String status, Long userId);
+    long countIncidentReportsByTimeStampBetween(String  start, String end);
+    long countIncidentReportsByTimeStampBetweenAndCategoryId(String start, String end, Long categoryId);
+
+    long countIncidentsReportsByCategoryIdAndUserId(Long categoryId, Long userId);
+
+    long countIncidentReportsByTimeStampBetweenAndUserId(String  start, String end, Long userId);
 }

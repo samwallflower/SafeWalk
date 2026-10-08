@@ -26,4 +26,6 @@ public interface IncidentVoteRepository extends JpaRepository<IncidentVote, Long
     void deleteByReportId(Long reportId);
 
     long countIncidentVotesByReport_IdAndVoteType(Long reportId, VoteType voteType);
+
+    long countIncidentVotesByVoteType(VoteType voteType);
 }

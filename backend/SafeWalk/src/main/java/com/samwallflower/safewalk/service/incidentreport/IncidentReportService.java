@@ -275,11 +275,13 @@ public class IncidentReportService implements IIncidentReportService {
 
     @Override
     public long getSumOfAllUpvotesInIncidentReportsByUserId(Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return incidentReportRepository.sumUpvotesByUserId(userId);
     }
 
     @Override
     public long getSumOfAllDownvotesInIncidentReportsByUserId(Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return incidentReportRepository.sumDownvotesByUserId(userId);
     }
 
@@ -290,6 +292,7 @@ public class IncidentReportService implements IIncidentReportService {
 
     @Override
     public long countIncidentReportsByUserId(Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return incidentReportRepository.countIncidentReportsByUserId(userId);
     }
 
@@ -300,7 +303,30 @@ public class IncidentReportService implements IIncidentReportService {
 
     @Override
     public long countIncidentReportsByStatusAndUserId(String status, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
         return incidentReportRepository.countIncidentReportsByStatusAndUserId(resolveStatus(status), userId);
+    }
+
+    @Override
+    public long countIncidentReportsByTimeStampBetween(String start, String end) {
+        return incidentReportRepository.countIncidentReportsByTimestampBetween(parseDateTime(start), parseDateTime(end));
+    }
+
+    @Override
+    public long countIncidentReportsByTimeStampBetweenAndCategoryId(String start, String end, Long categoryId) {
+        return incidentReportRepository.countIncidentReportsByTimestampBetweenAndCategoryId(parseDateTime(start), parseDateTime(end), categoryId);
+    }
+
+    @Override
+    public long countIncidentsReportsByCategoryIdAndUserId(Long categoryId, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+        return incidentReportRepository.countIncidentReportsByCategoryIdAndUserId(categoryId, userId);
+    }
+
+    @Override
+    public long countIncidentReportsByTimeStampBetweenAndUserId(String start, String end, Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+        return incidentReportRepository.countIncidentReportsByTimestampBetweenAndUserId(parseDateTime(start), parseDateTime(end), userId);
     }
 
     // helper methods
