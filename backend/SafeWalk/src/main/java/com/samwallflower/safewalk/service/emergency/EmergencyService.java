@@ -304,6 +304,11 @@ public class EmergencyService implements IEmergencyService{
         emergencyRepository.deleteById(id);
     }
 
+    @Override
+    public long countEmergencyByWalkSessionUserIdAndResolved(Long walkSessionUserId, Boolean resolved) {
+        return emergencyRepository.countEmergenciesByWalkSession_User_IdAndResolved(walkSessionUserId, resolved);
+    }
+
 
     private EmergencyDto executeEmergencyProtocol(WalkSession session, EmergencyTriggerSource source) {
         if (session.getStatus()== SessionStatus.EMERGENCY){

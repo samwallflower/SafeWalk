@@ -17,4 +17,6 @@ public interface EmergencyRepository extends JpaRepository<Emergency, Long> {
     Emergency findByIdAndWalkSession_User_Id(Long id, Long walkSessionUserId);
 
     List<Emergency> findByWalkSessionIdAndResolved(Long sessionId, Boolean resolved);
+
+    long countEmergenciesByWalkSession_User_IdAndResolved(Long walkSessionUserId, Boolean resolved);
 }

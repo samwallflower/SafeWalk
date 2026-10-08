@@ -40,4 +40,6 @@ public interface IEmergencyService {
     EmergencyDto updateEmergencyResolveById(Long id,Boolean resolved );
 
     void deleteEmergencyById(Long id);
+
+    long countEmergencyByWalkSessionUserIdAndResolved(Long walkSessionUserId, Boolean resolved);
 }

@@ -115,4 +115,10 @@ public class EmergencyController {
         long count = emergencyService.countEmergencyByTriggerSource(source);
         return ResponseEntity.ok(new ApiResponse("Count of emergencies retrieved successfully for source: " + source, count));
     }
+
+    @GetMapping("/count/by-walk-session-user-id-and-resolved/user/{walkSessionUserId}/emergency")
+    public ResponseEntity<ApiResponse> countEmergencyByWalkSessionUserIdAndResolved(@PathVariable Long walkSessionUserId, @RequestParam Boolean resolved) {
+        long count = emergencyService.countEmergencyByWalkSessionUserIdAndResolved(walkSessionUserId, resolved);
+        return ResponseEntity.ok(new ApiResponse("Count of emergencies retrieved successfully for user: " + walkSessionUserId + " and resolved: " + resolved, count));
+    }
 }
