@@ -1,6 +1,7 @@
 package com.samwallflower.safewalk.service.incidentvote;
 
 import com.samwallflower.safewalk.dto.IncidentVoteDto;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.enums.ReportStatus;
 import com.samwallflower.safewalk.enums.VoteType;
 import com.samwallflower.safewalk.exception.ResourceAlreadyExistsException;
@@ -15,10 +16,11 @@ import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.security.util.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -109,10 +111,35 @@ public class IncidentVoteService implements IIncidentVoteService {
     }
 
     @Override
-    public List<IncidentVoteDto> getVotesForReport(Long reportId) {
-        return incidentVoteRepository.findByReportId(reportId).stream()
-                .map(this::convertToDto)
-                .toList();
+    public long countIncidentVotesByUserIdAndVoteType(Long userId, String voteType) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+        return incidentVoteRepository.countIncidentVotesByUserIdAndVoteType(userId, resolveVoteType(voteType));
+    }
+
+    @Override
+    public long countIncidentVotesByReportIdAndVoteType(Long reportId, String voteType) {
+        return incidentVoteRepository.countIncidentVotesByReport_IdAndVoteType(reportId, resolveVoteType(voteType));
+    }
+
+    @Override
+    public long countIncidentVotesByVoteType(String voteType) {
+        return incidentVoteRepository.countIncidentVotesByVoteType(resolveVoteType(voteType));
+    }
+
+    @Override
+    public long countAllIncidentVotes() {
+        return incidentVoteRepository.count();
+    }
+
+    @Override
+    public long countAllIncidentVotesByUserId(Long userId) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+        return incidentVoteRepository.countAllByUserId(userId);
+    }
+
+    @Override
+    public PageResponse<IncidentVoteDto> getVotesForReport(Long reportId, int page, int size) {
+        return toPage(incidentVoteRepository.findByReportId(reportId, pageable(page, size)));
     }
 
     @Override
@@ -124,11 +151,9 @@ public class IncidentVoteService implements IIncidentVoteService {
 
     // basically a list of all votes the user has cast
     @Override
-    public List<IncidentVoteDto> getVotesByUserId(Long userId) {
+    public PageResponse<IncidentVoteDto> getVotesByUserId(Long userId, int page, int size) {
         SecurityUtils.checkOwnershipOrAdmin(userId);
-        return incidentVoteRepository.findByUserId(userId).stream()
-                .map(this::convertToDto)
-                .toList();
+        return toPage(incidentVoteRepository.findByUserId(userId, pageable(page, size)));
     }
 
     @Override
@@ -137,6 +162,11 @@ public class IncidentVoteService implements IIncidentVoteService {
         return incidentVoteRepository.findByReportIdAndUserId(reportId, userId)
                 .map(this::convertToDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Vote not found for report id " + reportId + " and user id " + userId));
+    }
+
+    @Override
+    public PageResponse<IncidentVoteDto> getVotesByReportIdAndVoteType(Long reportId, String voteType, int page, int size) {
+        return toPage(incidentVoteRepository.findByReportIdAndVoteType(reportId, resolveVoteType(voteType), pageable(page, size)));
     }
 
     // so for example - this particular user had previously cast upvote and now they want to change it to downvote
@@ -163,10 +193,8 @@ public class IncidentVoteService implements IIncidentVoteService {
     }
 
     @Override
-    public List<IncidentVoteDto> getAllVotes() {
-        return incidentVoteRepository.findAll().stream()
-                .map(this::convertToDto)
-                .toList();
+    public PageResponse<IncidentVoteDto> getAllVotes(int page, int size) {
+        return toPage(incidentVoteRepository.findAll(pageable(page, size)));
     }
 
     @Override
@@ -180,16 +208,15 @@ public class IncidentVoteService implements IIncidentVoteService {
 
     // basically delete all votes of a report
     @Override
+    @Transactional
     public void removeIncidentVoteByReportId(Long reportId) {
         IncidentReport report = incidentReportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Incident report not found with id " + reportId));
-        List<IncidentVote> incidentVotes = incidentVoteRepository.findByReportId(reportId);
-
         report.setUpvotes(0);
         report.setDownvotes(0);
 
         incidentReportRepository.save(report);
-        incidentVoteRepository.deleteAll(incidentVotes);
+        incidentVoteRepository.deleteByReportId(reportId);
     }
 
 
@@ -229,5 +256,13 @@ public class IncidentVoteService implements IIncidentVoteService {
             default -> throw new IllegalArgumentException("Invalid vote type: " + voteType);
         };
 
+    }
+
+    private PageResponse<IncidentVoteDto> toPage(Page<IncidentVote> page) {
+        return PageResponse.from(page.map(this::convertToDto));
+    }
+
+    private Pageable pageable(int page, int size){
+        return PageResponse.pageRequest(page, size);
     }
 }

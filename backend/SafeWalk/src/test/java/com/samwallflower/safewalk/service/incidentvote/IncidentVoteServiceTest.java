@@ -352,7 +352,7 @@ class IncidentVoteServiceTest {
         v2.setId(2L);
 
         when(incidentReportRepository.findById(10L)).thenReturn(Optional.of(report));
-        when(incidentVoteRepository.findByReportId(10L)).thenReturn(List.of(v1, v2));
+        when(incidentVoteRepository.findByReportId(10L, )).thenReturn(List.of(v1, v2));
 
         service.removeIncidentVoteByReportId(10L);
 
@@ -405,7 +405,7 @@ class IncidentVoteServiceTest {
         vote.setReport(buildReport(10L, 3L, 0, 0, ReportStatus.ACTIVE));
         vote.setVoteType(VoteType.UPVOTE);
 
-        when(incidentVoteRepository.findByReportId(10L)).thenReturn(List.of(vote));
+        when(incidentVoteRepository.findByReportId(10L, )).thenReturn(List.of(vote));
 
         List<IncidentVoteDto> result = service.getVotesForReport(10L);
 

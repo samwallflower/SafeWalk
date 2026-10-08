@@ -21,4 +21,9 @@ public record PageResponse<T>(List<T> content,int page, int size, long totalElem
         return PageRequest.of(Math.max(page,0),
                 Math.min(Math.max(size,1), DEFAULT_MAX_PAGE_SIZE), sort);
     }
+
+    public static Pageable pageRequest(int page, int size){
+        return PageRequest.of(Math.max(page,0),
+                Math.min(Math.max(size,1), DEFAULT_MAX_PAGE_SIZE));
+    }
 }

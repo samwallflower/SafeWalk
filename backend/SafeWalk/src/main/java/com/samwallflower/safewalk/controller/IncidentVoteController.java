@@ -1,6 +1,7 @@
 package com.samwallflower.safewalk.controller;
 
 import com.samwallflower.safewalk.dto.IncidentVoteDto;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.response.ApiResponse;
 import com.samwallflower.safewalk.service.incidentvote.IIncidentVoteService;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -18,8 +18,8 @@ public class IncidentVoteController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse> getAllVotes() {
-        List<IncidentVoteDto> votes = incidentVoteService.getAllVotes();
+    public ResponseEntity<ApiResponse> getAllVotes(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        PageResponse<IncidentVoteDto> votes = incidentVoteService.getAllVotes(page, size);
         return ResponseEntity.ok(new ApiResponse("All votes retrieved successfully", votes));
     }
 
@@ -60,8 +60,8 @@ public class IncidentVoteController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/report/{reportId}/vote")
-    public ResponseEntity<ApiResponse> getVotesForReport(@PathVariable Long reportId) {
-        List<IncidentVoteDto> votes = incidentVoteService.getVotesForReport(reportId);
+    public ResponseEntity<ApiResponse> getVotesForReport(@PathVariable Long reportId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        PageResponse<IncidentVoteDto> votes = incidentVoteService.getVotesForReport(reportId,  page, size);
         return ResponseEntity.ok(new ApiResponse("Votes retrieved successfully", votes));
     }
 
@@ -75,8 +75,8 @@ public class IncidentVoteController {
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/user/{userId}/vote")
-    public ResponseEntity<ApiResponse> getVotesByUserId(@PathVariable Long userId) {
-        List<IncidentVoteDto> votes = incidentVoteService.getVotesByUserId(userId);
+    public ResponseEntity<ApiResponse> getVotesByUserId(@PathVariable Long userId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        PageResponse<IncidentVoteDto> votes = incidentVoteService.getVotesByUserId(userId, page, size);
         return ResponseEntity.ok(new ApiResponse("Votes retrieved successfully", votes));
     }
 
@@ -86,4 +86,47 @@ public class IncidentVoteController {
         IncidentVoteDto voteDto = incidentVoteService.getVoteById(id);
         return ResponseEntity.ok(new ApiResponse("Vote retrieved successfully", voteDto));
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/report/{reportId}/vote")
+    public ResponseEntity<ApiResponse> getVotesByReportIdAndVoteType(@PathVariable Long reportId, @RequestParam String voteType, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        PageResponse<IncidentVoteDto> votes = incidentVoteService.getVotesByReportIdAndVoteType(reportId, voteType, page, size);
+        return ResponseEntity.ok(new ApiResponse("Votes retrieved successfully", votes));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/count/by-report-and-vote-type/report/{reportId}/vote")
+    public ResponseEntity<ApiResponse> countIncidentVotesByReportIdAndVoteType(@PathVariable Long reportId, @RequestParam String voteType) {
+        long count = incidentVoteService.countIncidentVotesByReportIdAndVoteType(reportId, voteType);
+        return ResponseEntity.ok(new ApiResponse("Vote count retrieved successfully", count));
+    }
+
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping("/count/by-user-and-vote-type/user/{userId}/vote")
+    public ResponseEntity<ApiResponse> countIncidentVotesByUserIdAndVoteType(@PathVariable Long userId, @RequestParam String voteType) {
+        long count = incidentVoteService.countIncidentVotesByUserIdAndVoteType(userId, voteType);
+        return ResponseEntity.ok(new ApiResponse("Vote count retrieved successfully", count));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/count/by-vote-type/vote")
+    public ResponseEntity<ApiResponse> countIncidentVotesByVoteType(@RequestParam String voteType) {
+        long count = incidentVoteService.countIncidentVotesByVoteType(voteType);
+        return ResponseEntity.ok(new ApiResponse("Vote count retrieved successfully", count));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/count/all")
+    public ResponseEntity<ApiResponse> countAllIncidentVotes(){
+        long count = incidentVoteService.countAllIncidentVotes();
+        return ResponseEntity.ok(new ApiResponse("Vote count retrieved successfully", count));
+    }
+
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping("/count/all-by-user/user/{userId}/vote")
+    public ResponseEntity<ApiResponse> countAllIncidentVotesByUserId(@PathVariable Long userId) {
+        long count = incidentVoteService.countAllIncidentVotesByUserId(userId);
+        return ResponseEntity.ok(new ApiResponse("Vote count retrieved successfully", count));
+    }
+
 }
