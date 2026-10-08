@@ -3,6 +3,7 @@ package com.samwallflower.safewalk.service.incidentreport;
 import com.samwallflower.safewalk.dto.HeatMapPointDto;
 import com.samwallflower.safewalk.dto.IncidentReportDto;
 import com.samwallflower.safewalk.dto.PageResponse;
+import com.samwallflower.safewalk.enums.ReportStatus;
 import com.samwallflower.safewalk.model.IncidentReport;
 import com.samwallflower.safewalk.request.incidentreport.AddIncidentReportRequest;
 import com.samwallflower.safewalk.request.incidentreport.UpdateIncidentReportRequest;
@@ -16,19 +17,19 @@ public interface IIncidentReportService {
 
     void deleteIncidentReportById(Long id);
 
-    List<IncidentReportDto> getAllIncidentReports();
+    PageResponse<IncidentReportDto> getAllIncidentReports(int page, int size);
     IncidentReportDto getIncidentReportById(Long id);
-    List<IncidentReportDto> getIncidentReportsByCategoryName(String categoryName);
-    List<IncidentReportDto> getIncidentReportsByUserId(Long userId);
-    List<IncidentReportDto> getIncidentReportsByStatus(String status);
-    List<IncidentReportDto> getIncidentReportsByTimeRange(String startTime, String endTime);
-    List<IncidentReportDto> getIncidentReportsByUpvotes(Integer upvotes);
-    List<IncidentReportDto> getIncidentReportsByDownvotes(Integer downvotes);
-    List<IncidentReportDto> getIncidentReportsByAnonymous(Boolean isAnonymous);
-    List<IncidentReportDto> getIncidentReportsByCategoryAndStatus(String categoryName, String status);
-    List<IncidentReportDto> getIncidentReportsByUserIdAndStatus(Long userId, String status);
+    PageResponse<IncidentReportDto> getIncidentReportsByCategoryName(String categoryName, int page,  int size);
+    PageResponse<IncidentReportDto> getIncidentReportsByUserId(Long userId, int page, int size);
+    PageResponse<IncidentReportDto> getIncidentReportsByStatus(String status, int page, int size);
+    PageResponse<IncidentReportDto> getIncidentReportsByTimeRange(String startTime, String endTime, int page, int size);
+    PageResponse<IncidentReportDto> getIncidentReportsByUpvotes(Integer upvotes, int page, int size);
+    PageResponse<IncidentReportDto> getIncidentReportsByDownvotes(Integer downvotes, int page, int size);
+    PageResponse<IncidentReportDto> getIncidentReportsByAnonymous(Boolean isAnonymous, int page, int size);
+    PageResponse<IncidentReportDto> getIncidentReportsByCategoryAndStatus(String categoryName, String status, int page, int size);
+    PageResponse<IncidentReportDto> getIncidentReportsByUserIdAndStatus(Long userId, String status, int page, int size);
     List<IncidentReportDto> getIncidentReportsByLocationAndStatus(Double latitude, Double longitude, Double radiusMeters, String status);
-    List<IncidentReportDto> getIncidentReportsByTimeRangeAndStatus(String startTime, String endTime, String status);
+    PageResponse<IncidentReportDto> getIncidentReportsByTimeRangeAndStatus(String startTime, String endTime, String status, int page, int size);
 
     PageResponse<IncidentReportDto> getActiveIncidentReportsPage(int page, int pageSize);
 
@@ -40,4 +41,12 @@ public interface IIncidentReportService {
     IncidentReportDto convertToDto(IncidentReport incidentReport);
 
     long countAllIncidentReports();
+
+    long getSumOfAllUpvotesInIncidentReportsByUserId(Long userId);
+    long getSumOfAllDownvotesInIncidentReportsByUserId(Long userId);
+
+    long countIncidentReportsByCategoryId(Long categoryId);
+    long countIncidentReportsByUserId(Long userId);
+    long countIncidentReportsByStatus(String status);
+    long countIncidentReportsByStatusAndUserId(String status, Long userId);
 }

@@ -16,20 +16,6 @@ import java.util.Optional;
 @Repository
 public interface IncidentReportRepository extends JpaRepository<IncidentReport, Long> {
     List<IncidentReport> findByUserId(Long userId);
-    List<IncidentReport> findByCategoryId(Long categoryId);
-    List<IncidentReport> findByUserIdAndCategoryId(Long userId, Long categoryId);
-    List<IncidentReport> findByStatus(ReportStatus status);
-
-    List<IncidentReport> findByUserIdAndStatus(Long userId, ReportStatus status);
-    List<IncidentReport> findByCategoryIdAndStatus(Long categoryId, ReportStatus status);
-
-
-    List<IncidentReport> findIncidentReportByDownvotes(Integer downvotes);
-    List<IncidentReport> findIncidentReportByUpvotes(Integer upvotes);
-    List<IncidentReport> findIncidentReportByIsAnonymous(Boolean isAnonymous);
-    List<IncidentReport> findIncidentReportByTimestampBetween(LocalDateTime start, LocalDateTime end);
-    List<IncidentReport> findIncidentReportByTimestampBetweenAndStatus(LocalDateTime start, LocalDateTime end, ReportStatus status);
-
 
     @Query(value = """
         SELECT * FROM incident_report ir
@@ -58,10 +44,35 @@ public interface IncidentReportRepository extends JpaRepository<IncidentReport, 
             @Param("status") String status
     );
 
+    //Paginated queries
     Page<IncidentReport> findByCategoryId(Long categoryId, Pageable pageable);
     Page<IncidentReport> findByStatus(ReportStatus status, Pageable pageable);
 
+    Page<IncidentReport> findByUserId(Long userId, Pageable pageable);
+    Page<IncidentReport> findByUserIdAndCategoryId(Long userId, Long categoryId, Pageable pageable);
+    Page<IncidentReport> findByUserIdAndStatus(Long userId, ReportStatus status, Pageable pageable);
+    Page<IncidentReport> findByCategoryIdAndStatus(Long categoryId, ReportStatus status, Pageable pageable);
+
+    Page<IncidentReport> findByTimestampBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
+    Page<IncidentReport> findByTimestampBetweenAndStatus(LocalDateTime start, LocalDateTime end, ReportStatus status, Pageable pageable);
+
+    Page<IncidentReport> findByIsAnonymous(Boolean isAnonymous, Pageable pageable);
+    Page<IncidentReport> findByUpvotes(Integer upvotes, Pageable pageable);
+    Page<IncidentReport> findByDownvotes(Integer downvotes, Pageable pageable);
+
     //Finds the most recent report by user
     Optional<IncidentReport> findTopByUserIdOrderByTimestampDesc(Long userId);
+
+    long countIncidentReportsByCategoryId(Long categoryId);
+
+    long countIncidentReportsByStatus(ReportStatus status);
+    long countIncidentReportsByUserId(Long userId);
+    long countIncidentReportsByStatusAndUserId(ReportStatus status, Long userId);
+
+    @Query("SELECT SUM(ir.upvotes) FROM IncidentReport ir WHERE ir.userId = :userId")
+    Long sumUpvotesByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT SUM(ir.downvotes) FROM IncidentReport ir WHERE ir.userId = :userId")
+    Long sumDownvotesByUserId(@Param("userId") Long userId);
 
 }

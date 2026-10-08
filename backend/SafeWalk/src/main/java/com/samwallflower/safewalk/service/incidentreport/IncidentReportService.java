@@ -18,6 +18,7 @@ import com.samwallflower.safewalk.security.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -140,10 +141,8 @@ public class IncidentReportService implements IIncidentReportService {
     }
 
     @Override
-    public List<IncidentReportDto> getAllIncidentReports() {
-        return incidentReportRepository.findAll().stream()
-                .map(this::convertToDto)
-                .toList();
+    public PageResponse<IncidentReportDto> getAllIncidentReports(int page, int size) {
+        return toPage(incidentReportRepository.findAll(newestFirst(page, size)));
     }
 
     @Override
@@ -154,78 +153,59 @@ public class IncidentReportService implements IIncidentReportService {
     }
 
     @Override
-    public List<IncidentReportDto> getIncidentReportsByCategoryName(String categoryName) {
+    public PageResponse<IncidentReportDto> getIncidentReportsByCategoryName(String categoryName, int page, int size) {
         IncidentCategory category = categoryRepository.findByNameIgnoreCase(categoryName)
                 .orElseThrow(()-> new ResourceNotFoundException("Incident category not found with name: " + categoryName));
-        return incidentReportRepository.findByCategoryId(category.getId()).stream()
-                .map(this::convertToDto)
-                .toList();
+        return toPage(incidentReportRepository.findByCategoryId(category.getId(), newestFirst(page, size)));
     }
 
     @Override
-    public List<IncidentReportDto> getIncidentReportsByUserId(Long userId) {
+    public PageResponse<IncidentReportDto> getIncidentReportsByUserId(Long userId, int page, int size) {
         SecurityUtils.checkOwnershipOrAdmin(userId);
-        return incidentReportRepository.findByUserId(userId).stream()
-                .map(this::convertToDto)
-                .toList();
+        return toPage(incidentReportRepository.findByUserId(userId, newestFirst(page, size)));
     }
 
     @Override
-    public List<IncidentReportDto> getIncidentReportsByStatus(String status) {
+    public PageResponse<IncidentReportDto> getIncidentReportsByStatus(String status, int page, int size) {
         ReportStatus reportStatus = resolveStatus(status);
-        return incidentReportRepository.findByStatus(reportStatus).stream()
-                .map(this::convertToDto)
-                .toList();
+        return toPage(incidentReportRepository.findByStatus(reportStatus, newestFirst(page, size)));
     }
 
 
     @Override
-    public List<IncidentReportDto> getIncidentReportsByTimeRange(String startTime, String endTime) {
-        return incidentReportRepository.findIncidentReportByTimestampBetween(parseDateTime(startTime), parseDateTime(endTime)).stream()
-                .map(this::convertToDto)
-                .toList();
+    public PageResponse<IncidentReportDto> getIncidentReportsByTimeRange(String startTime, String endTime, int page, int size) {
+        return toPage(incidentReportRepository.findByTimestampBetween(parseDateTime(startTime), parseDateTime(endTime), newestFirst(page, size)));
     }
 
     @Override
-    public List<IncidentReportDto> getIncidentReportsByUpvotes(Integer upvotes) {
-        return incidentReportRepository.findIncidentReportByUpvotes(upvotes).stream()
-                .map(this::convertToDto)
-                .toList();
+    public PageResponse<IncidentReportDto> getIncidentReportsByUpvotes(Integer upvotes, int page, int size) {
+        return toPage(incidentReportRepository.findByUpvotes(upvotes, newestFirst(page, size)));
     }
 
     @Override
-    public List<IncidentReportDto> getIncidentReportsByDownvotes(Integer downvotes) {
-        return incidentReportRepository.findIncidentReportByDownvotes(downvotes).stream()
-                .map(this::convertToDto)
-                .toList();
+    public PageResponse<IncidentReportDto> getIncidentReportsByDownvotes(Integer downvotes, int page, int size) {
+        return toPage(incidentReportRepository.findByDownvotes(downvotes, newestFirst(page, size)));
     }
 
     @Override
-    public List<IncidentReportDto> getIncidentReportsByAnonymous(Boolean isAnonymous) {
-        return incidentReportRepository.findIncidentReportByIsAnonymous(isAnonymous).stream()
-                .map(this::convertToDto)
-                .toList();
+    public PageResponse<IncidentReportDto> getIncidentReportsByAnonymous(Boolean isAnonymous, int page, int size) {
+        return toPage(incidentReportRepository.findByIsAnonymous(isAnonymous, newestFirst(page, size)));
     }
 
     @Override
-    public List<IncidentReportDto> getIncidentReportsByCategoryAndStatus(String categoryName, String status) {
+    public PageResponse<IncidentReportDto> getIncidentReportsByCategoryAndStatus(String categoryName, String status, int page, int size) {
         IncidentCategory category = categoryRepository.findByNameIgnoreCase(categoryName)
                 .orElseThrow(()->
                         new ResourceNotFoundException("Incident category not found with name: " + categoryName));
         ReportStatus reportStatus = resolveStatus(status);
-        return incidentReportRepository.findByCategoryIdAndStatus(category.getId(), reportStatus)
-                .stream()
-                .map(this::convertToDto)
-                .toList();
+        return toPage(incidentReportRepository.findByCategoryIdAndStatus(category.getId(), reportStatus, newestFirst(page, size)));
     }
 
     @Override
-    public List<IncidentReportDto> getIncidentReportsByUserIdAndStatus(Long userId, String status) {
+    public PageResponse<IncidentReportDto> getIncidentReportsByUserIdAndStatus(Long userId, String status, int page, int size) {
         SecurityUtils.checkOwnershipOrAdmin(userId);
         ReportStatus reportStatus = resolveStatus(status);
-        return incidentReportRepository.findByUserIdAndStatus(userId, reportStatus).stream()
-                .map(this::convertToDto)
-                .toList();
+        return toPage(incidentReportRepository.findByUserIdAndStatus(userId, reportStatus, newestFirst(page, size)));
     }
 
     @Override
@@ -237,14 +217,10 @@ public class IncidentReportService implements IIncidentReportService {
     }
 
     @Override
-    public List<IncidentReportDto> getIncidentReportsByTimeRangeAndStatus(String startTime, String endTime, String status) {
+    public PageResponse<IncidentReportDto> getIncidentReportsByTimeRangeAndStatus(String startTime, String endTime, String status, int page, int size) {
         ReportStatus reportStatus = resolveStatus(status);
 
-        return incidentReportRepository
-                .findIncidentReportByTimestampBetweenAndStatus(parseDateTime(startTime),
-                        parseDateTime(endTime), reportStatus).stream()
-                .map(this::convertToDto)
-                .toList();
+        return toPage(incidentReportRepository.findByTimestampBetweenAndStatus(parseDateTime(startTime), parseDateTime(endTime), reportStatus, newestFirst(page, size)));
     }
 
     @Override
@@ -297,6 +273,37 @@ public class IncidentReportService implements IIncidentReportService {
         return incidentReportRepository.count();
     }
 
+    @Override
+    public long getSumOfAllUpvotesInIncidentReportsByUserId(Long userId) {
+        return incidentReportRepository.sumUpvotesByUserId(userId);
+    }
+
+    @Override
+    public long getSumOfAllDownvotesInIncidentReportsByUserId(Long userId) {
+        return incidentReportRepository.sumDownvotesByUserId(userId);
+    }
+
+    @Override
+    public long countIncidentReportsByCategoryId(Long categoryId) {
+        return incidentReportRepository.countIncidentReportsByCategoryId(categoryId);
+    }
+
+    @Override
+    public long countIncidentReportsByUserId(Long userId) {
+        return incidentReportRepository.countIncidentReportsByUserId(userId);
+    }
+
+    @Override
+    public long countIncidentReportsByStatus(String status) {
+        return incidentReportRepository.countIncidentReportsByStatus(resolveStatus(status));
+    }
+
+    @Override
+    public long countIncidentReportsByStatusAndUserId(String status, Long userId) {
+        return incidentReportRepository.countIncidentReportsByStatusAndUserId(resolveStatus(status), userId);
+    }
+
+    // helper methods
     private ReportStatus resolveStatus(String status) {
         return switch (status.toLowerCase().trim()){
             case "active" -> ReportStatus.ACTIVE;
@@ -312,6 +319,14 @@ public class IncidentReportService implements IIncidentReportService {
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException("Invalid date/time format: " + dateTime);
         }
+    }
+
+    private PageResponse<IncidentReportDto> toPage(Page<IncidentReport> page) {
+        return PageResponse.from(page.map(this::convertToDto));
+    }
+
+    private Pageable newestFirst(int page, int size){
+        return PageResponse.pageRequest(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
     }
 
 
