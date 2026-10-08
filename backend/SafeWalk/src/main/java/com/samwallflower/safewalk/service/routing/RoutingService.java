@@ -2,6 +2,7 @@ package com.samwallflower.safewalk.service.routing;
 
 import com.google.maps.model.EncodedPolyline;
 import com.google.maps.model.LatLng;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.dto.RouteDto;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
 import com.samwallflower.safewalk.integration.googlemaps.GoogleMapsClient;
@@ -14,6 +15,8 @@ import com.samwallflower.safewalk.request.route.RouteRecommendationRequest;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -32,10 +35,9 @@ public class RoutingService implements IRoutingService{
     private double penaltyMetersPerSeverityPoint;
 
     @Override
-    public List<RouteDto> getAllRoutes() {
-        return routeRepository.findAll().stream()
-                .map(this::convertToRouteDto)
-                .toList();
+    public PageResponse<RouteDto> getAllRoutes(int page, int size) {
+        Pageable pageable = PageResponse.pageRequest(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        return PageResponse.from(routeRepository.findAll(pageable).map(this::convertToRouteDto));
     }
 
     /**

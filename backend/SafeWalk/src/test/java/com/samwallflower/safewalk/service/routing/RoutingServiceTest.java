@@ -221,7 +221,7 @@ public class RoutingServiceTest {
 
         when(routeRepository.findAll()).thenReturn(List.of(r1, r2));
 
-        List<RouteDto> result = routingService.getAllRoutes();
+        List<RouteDto> result = routingService.getAllRoutes(, );
 
         assertThat(result.size()).isEqualTo(2);
         assertThat(result).extracting(RouteDto::getId).containsExactlyInAnyOrder(1L, 2L);

@@ -1,5 +1,6 @@
 package com.samwallflower.safewalk.controller;
 
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.dto.RouteDto;
 import com.samwallflower.safewalk.request.route.RouteRecommendationRequest;
 import com.samwallflower.safewalk.response.ApiResponse;
@@ -32,8 +33,8 @@ public class RoutingController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse> getAllRoutes(){
-        List<RouteDto> routes = routingService.getAllRoutes();
+    public ResponseEntity<ApiResponse> getAllRoutes(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size){
+        PageResponse<RouteDto> routes = routingService.getAllRoutes(page, size);
         return ResponseEntity.ok(new ApiResponse("Routes found successfully", routes));
     }
 

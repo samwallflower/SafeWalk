@@ -102,7 +102,7 @@ class RoutingControllerTest {
 
     @Test
     void getAllRoutes_returns200() throws Exception {
-        when(routingService.getAllRoutes()).thenReturn(List.of());
+        when(routingService.getAllRoutes(, )).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/routing/all"))
                 .andExpect(status().isOk());
