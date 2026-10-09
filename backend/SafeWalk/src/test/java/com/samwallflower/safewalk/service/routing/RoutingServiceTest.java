@@ -1,6 +1,7 @@
 package com.samwallflower.safewalk.service.routing;
 
 import com.samwallflower.safewalk.dto.RouteDto;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
 import com.samwallflower.safewalk.integration.googlemaps.GoogleMapsClient;
 import com.samwallflower.safewalk.integration.googlemaps.GoogleRouteCandidate;
@@ -16,6 +17,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -23,6 +27,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
@@ -219,12 +224,15 @@ public class RoutingServiceTest {
         r2.setId(2L);
         r2.setPolyline(REAL_POLYLINE);
 
-        when(routeRepository.findAll()).thenReturn(List.of(r1, r2));
+        when(routeRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(r1, r2), PageRequest.of(0, 25), 2));
 
-        List<RouteDto> result = routingService.getAllRoutes(, );
+        PageResponse<RouteDto> result = routingService.getAllRoutes(0, 25);
 
-        assertThat(result.size()).isEqualTo(2);
-        assertThat(result).extracting(RouteDto::getId).containsExactlyInAnyOrder(1L, 2L);
+        assertThat(result.content()).hasSize(2);
+        assertThat(result.content()).extracting(RouteDto::getId).containsExactlyInAnyOrder(1L, 2L);
+        assertThat(result.totalElements()).isEqualTo(2);
+        assertThat(result.page()).isEqualTo(0);
     }
 
     @Test

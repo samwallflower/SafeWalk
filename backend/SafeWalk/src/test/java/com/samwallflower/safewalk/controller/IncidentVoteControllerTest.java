@@ -1,6 +1,7 @@
 package com.samwallflower.safewalk.controller;
 
 import com.samwallflower.safewalk.dto.IncidentVoteDto;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.enums.VoteType;
 import com.samwallflower.safewalk.exception.ResourceAlreadyExistsException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
@@ -31,11 +32,13 @@ class IncidentVoteControllerTest {
 
     @Test
     void getAllVotes_returns200() throws Exception {
-        when(incidentVoteService.getAllVotes()).thenReturn(List.of(new IncidentVoteDto()));
+        when(incidentVoteService.getAllVotes(0, 25))
+                .thenReturn(new PageResponse<>(List.of(new IncidentVoteDto()), 0, 25, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/incident-votes/all"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.totalElements").value(1));
     }
 
     @Test
@@ -133,11 +136,12 @@ class IncidentVoteControllerTest {
 
     @Test
     void getVotesForReport_returns200() throws Exception {
-        when(incidentVoteService.getVotesForReport(10L)).thenReturn(List.of(new IncidentVoteDto()));
+        when(incidentVoteService.getVotesForReport(10L, 0, 25))
+                .thenReturn(new PageResponse<>(List.of(new IncidentVoteDto()), 0, 25, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/incident-votes/report/10/vote"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     @Test
@@ -156,11 +160,12 @@ class IncidentVoteControllerTest {
 
     @Test
     void getVotesByUserId_returns200() throws Exception {
-        when(incidentVoteService.getVotesByUserId(1L)).thenReturn(List.of(new IncidentVoteDto()));
+        when(incidentVoteService.getVotesByUserId(1L, 0, 25))
+                .thenReturn(new PageResponse<>(List.of(new IncidentVoteDto()), 0, 25, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/incident-votes/user/1/vote"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     @Test

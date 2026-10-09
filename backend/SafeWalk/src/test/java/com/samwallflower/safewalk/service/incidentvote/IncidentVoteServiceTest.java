@@ -1,6 +1,7 @@
 package com.samwallflower.safewalk.service.incidentvote;
 
 import com.samwallflower.safewalk.dto.IncidentVoteDto;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.enums.ReportStatus;
 import com.samwallflower.safewalk.enums.VoteType;
 import com.samwallflower.safewalk.exception.ResourceAlreadyExistsException;
@@ -20,6 +21,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -346,20 +350,15 @@ class IncidentVoteServiceTest {
     @Test
     void removeIncidentVoteByReportId_resetsCountsAndDeletesAllVotes() {
         IncidentReport report = buildReport(10L, 2L, 5, 3, ReportStatus.ACTIVE);
-        IncidentVote v1 = new IncidentVote();
-        v1.setId(1L);
-        IncidentVote v2 = new IncidentVote();
-        v2.setId(2L);
 
         when(incidentReportRepository.findById(10L)).thenReturn(Optional.of(report));
-        when(incidentVoteRepository.findByReportId(10L, )).thenReturn(List.of(v1, v2));
 
         service.removeIncidentVoteByReportId(10L);
 
         assertThat(report.getUpvotes()).isEqualTo(0);
         assertThat(report.getDownvotes()).isEqualTo(0);
         verify(incidentReportRepository).save(report);
-        verify(incidentVoteRepository).deleteAll(List.of(v1, v2));
+        verify(incidentVoteRepository).deleteByReportId(10L);
     }
 
     @Test
@@ -405,12 +404,14 @@ class IncidentVoteServiceTest {
         vote.setReport(buildReport(10L, 3L, 0, 0, ReportStatus.ACTIVE));
         vote.setVoteType(VoteType.UPVOTE);
 
-        when(incidentVoteRepository.findByReportId(10L, )).thenReturn(List.of(vote));
+        when(incidentVoteRepository.findByReportId(eq(10L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(vote), PageRequest.of(0, 25), 1));
 
-        List<IncidentVoteDto> result = service.getVotesForReport(10L);
+        PageResponse<IncidentVoteDto> result = service.getVotesForReport(10L, 0, 25);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getUserId()).isEqualTo(2L);
-        assertThat(result.get(0).getReportId()).isEqualTo(10L);
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.content().get(0).getUserId()).isEqualTo(2L);
+        assertThat(result.content().get(0).getReportId()).isEqualTo(10L);
+        assertThat(result.totalElements()).isEqualTo(1);
     }
 }

@@ -2,6 +2,7 @@ package com.samwallflower.safewalk.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.samwallflower.safewalk.dto.IncidentReportDto;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.exception.RateLimitExceededException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
 import com.samwallflower.safewalk.exception.ResourceProcessingException;
@@ -36,11 +37,24 @@ class IncidentReportControllerTest {
 
     @Test
     void getAllIncidentReports_returns200() throws Exception {
-        when(incidentReportService.getAllIncidentReports()).thenReturn(List.of(new IncidentReportDto()));
+        when(incidentReportService.getAllIncidentReports(0, 25))
+                .thenReturn(new PageResponse<>(List.of(new IncidentReportDto()), 0, 25, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/incident-reports/all"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.totalElements").value(1));
+    }
+
+    @Test
+    void getAllIncidentReports_passesPageAndSizeQueryParams() throws Exception {
+        when(incidentReportService.getAllIncidentReports(3, 10))
+                .thenReturn(new PageResponse<>(List.of(), 3, 10, 31, 4, true));
+
+        mockMvc.perform(get("/api/v1/incident-reports/all").param("page", "3").param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.page").value(3))
+                .andExpect(jsonPath("$.data.totalPages").value(4));
     }
 
     @Test

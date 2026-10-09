@@ -74,10 +74,10 @@ public interface IncidentReportRepository extends JpaRepository<IncidentReport, 
     long countIncidentReportsByTimestampBetweenAndCategoryId(LocalDateTime start, LocalDateTime end, Long categoryId);
     long countIncidentReportsByTimestampBetweenAndUserId(LocalDateTime start, LocalDateTime end, Long userId);
 
-    @Query("SELECT SUM(ir.upvotes) FROM IncidentReport ir WHERE ir.userId = :userId")
+    @Query("SELECT SUM(ir.upvotes) FROM IncidentReport ir WHERE ir.user.id = :userId")
     Long sumUpvotesByUserId(@Param("userId") Long userId);
 
-    @Query("SELECT SUM(ir.downvotes) FROM IncidentReport ir WHERE ir.userId = :userId")
+    @Query("SELECT SUM(ir.downvotes) FROM IncidentReport ir WHERE ir.user.id = :userId")
     Long sumDownvotesByUserId(@Param("userId") Long userId);
 
 }

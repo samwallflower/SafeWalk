@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
@@ -44,8 +43,6 @@ public class IncidentReportService implements IIncidentReportService {
     @Value("${app.incident.add.report-time-limit-in-mins}")
     private int report_add_time_limit_in_mins;
 
-    @Value("${DEFAULT_PAGE_SIZE}")
-    private int DEFAULT_PAGE_SIZE;
 
     // Rate Limiter -> one person can only add a report every 5 minutes
     // checkOwnershipOrAdmin checks whether the given user id belongs to the logged in user
@@ -166,6 +163,12 @@ public class IncidentReportService implements IIncidentReportService {
     }
 
     @Override
+    public PageResponse<IncidentReportDto> getIncidentReportsByUSerIdAndCategoryId(Long userId, Long categoryId, int page, int size) {
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+        return toPage(incidentReportRepository.findByUserIdAndCategoryId(userId, categoryId, newestFirst(page, size)));
+    }
+
+    @Override
     public PageResponse<IncidentReportDto> getIncidentReportsByStatus(String status, int page, int size) {
         ReportStatus reportStatus = resolveStatus(status);
         return toPage(incidentReportRepository.findByStatus(reportStatus, newestFirst(page, size)));
@@ -225,10 +228,7 @@ public class IncidentReportService implements IIncidentReportService {
 
     @Override
     public PageResponse<IncidentReportDto> getActiveIncidentReportsPage(int page, int pageSize) {
-        Pageable pageable = PageRequest.of(Math.max(page,0),
-                Math.min(Math.max(pageSize,1), DEFAULT_PAGE_SIZE),
-                Sort.by(Sort.Direction.DESC, "timestamp"));
-        return PageResponse.from(incidentReportRepository.findByStatus(ReportStatus.ACTIVE, pageable).map(this::convertToDto));
+        return toPage(incidentReportRepository.findByStatus(ReportStatus.ACTIVE, newestFirst(page, pageSize)));
     }
 
     @Override
@@ -352,7 +352,8 @@ public class IncidentReportService implements IIncidentReportService {
     }
 
     private Pageable newestFirst(int page, int size){
-        return PageResponse.pageRequest(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
+        return PageResponse.pageRequest(page, size, Sort.by(Sort.Direction.DESC, "timestamp")
+                .and(Sort.by(Sort.Direction.DESC, "id")));
     }
 
 

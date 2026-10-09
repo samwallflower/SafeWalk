@@ -20,6 +20,7 @@ public interface IIncidentReportService {
     IncidentReportDto getIncidentReportById(Long id);
     PageResponse<IncidentReportDto> getIncidentReportsByCategoryName(String categoryName, int page,  int size);
     PageResponse<IncidentReportDto> getIncidentReportsByUserId(Long userId, int page, int size);
+    PageResponse<IncidentReportDto> getIncidentReportsByUSerIdAndCategoryId(Long userId, Long categoryId, int page, int size);
     PageResponse<IncidentReportDto> getIncidentReportsByStatus(String status, int page, int size);
     PageResponse<IncidentReportDto> getIncidentReportsByTimeRange(String startTime, String endTime, int page, int size);
     PageResponse<IncidentReportDto> getIncidentReportsByUpvotes(Integer upvotes, int page, int size);

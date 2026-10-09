@@ -88,7 +88,7 @@ public class IncidentVoteController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/report/{reportId}/vote")
+    @GetMapping("/by-report-id-and-vote-type/report/{reportId}/vote")
     public ResponseEntity<ApiResponse> getVotesByReportIdAndVoteType(@PathVariable Long reportId, @RequestParam String voteType, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
         PageResponse<IncidentVoteDto> votes = incidentVoteService.getVotesByReportIdAndVoteType(reportId, voteType, page, size);
         return ResponseEntity.ok(new ApiResponse("Votes retrieved successfully", votes));

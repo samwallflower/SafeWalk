@@ -1,16 +1,15 @@
 package com.samwallflower.safewalk.service.incidentreport;
 
 import com.samwallflower.safewalk.dto.IncidentReportDto;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.enums.ReportStatus;
 import com.samwallflower.safewalk.exception.RateLimitExceededException;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
-import com.samwallflower.safewalk.exception.ResourceProcessingException;
 import com.samwallflower.safewalk.model.IncidentCategory;
 import com.samwallflower.safewalk.model.IncidentReport;
 import com.samwallflower.safewalk.model.User;
 import com.samwallflower.safewalk.repository.IncidentCategoryRepository;
 import com.samwallflower.safewalk.repository.IncidentReportRepository;
-import com.samwallflower.safewalk.repository.IncidentVoteRepository;
 import com.samwallflower.safewalk.repository.UserRepository;
 import com.samwallflower.safewalk.request.incidentreport.AddIncidentReportRequest;
 import com.samwallflower.safewalk.request.incidentreport.UpdateIncidentReportRequest;
@@ -24,6 +23,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -316,7 +318,7 @@ class IncidentReportServiceTest {
 
     @Test
     void getIncidentReportsByStatus_throws_whenStatusInvalid() {
-        assertThatThrownBy(() -> service.getIncidentReportsByStatus("garbage"))
+        assertThatThrownBy(() -> service.getIncidentReportsByStatus("garbage", 0, 25))
                 .isInstanceOf(IllegalArgumentException.class);
 
         verifyNoInteractions(incidentReportRepository);
@@ -326,21 +328,22 @@ class IncidentReportServiceTest {
 
     @Test
     void getIncidentReportsByTimeRange_throws_whenDateFormatInvalid() {
-        assertThatThrownBy(() -> service.getIncidentReportsByTimeRange("not-a-date", "2026-01-01T00:00:00"))
+        assertThatThrownBy(() -> service.getIncidentReportsByTimeRange("not-a-date", "2026-01-01T00:00:00", 0, 25))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid date");
     }
 
     @Test
     void getIncidentReportsByTimeRange_success_validDates() {
-        when(incidentReportRepository.findIncidentReportByTimestampBetween(any(), any()))
-                .thenReturn(List.of(new IncidentReport()));
+        when(incidentReportRepository.findByTimestampBetween(any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(new IncidentReport()), PageRequest.of(0, 25), 1));
 
-        List<IncidentReportDto> result = service.getIncidentReportsByTimeRange(
-                "2026-01-01T00:00:00", "2026-01-02T00:00:00"
+        PageResponse<IncidentReportDto> result = service.getIncidentReportsByTimeRange(
+                "2026-01-01T00:00:00", "2026-01-02T00:00:00", 0, 25
         );
 
-        assertThat(result).hasSize(1);
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.totalElements()).isEqualTo(1);
     }
 
     // ---------- read paths ----------
@@ -357,7 +360,7 @@ class IncidentReportServiceTest {
     void getIncidentReportsByCategoryName_throws_whenCategoryMissing() {
         when(categoryRepository.findByNameIgnoreCase("ghost")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.getIncidentReportsByCategoryName("ghost"))
+        assertThatThrownBy(() -> service.getIncidentReportsByCategoryName("ghost", 0, 25))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 

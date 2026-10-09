@@ -1,6 +1,7 @@
 package com.samwallflower.safewalk.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.samwallflower.safewalk.dto.PageResponse;
 import com.samwallflower.safewalk.dto.RouteDto;
 import com.samwallflower.safewalk.exception.ResourceNotFoundException;
 import com.samwallflower.safewalk.request.route.RouteRecommendationRequest;
@@ -102,10 +103,28 @@ class RoutingControllerTest {
 
     @Test
     void getAllRoutes_returns200() throws Exception {
-        when(routingService.getAllRoutes(, )).thenReturn(List.of());
+        when(routingService.getAllRoutes(0, 25))
+                .thenReturn(new PageResponse<>(List.of(), 0, 25, 0, 0, true));
 
         mockMvc.perform(get("/api/v1/routing/all"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(0))
+                .andExpect(jsonPath("$.data.page").value(0))
+                .andExpect(jsonPath("$.data.size").value(25));
+    }
+
+    @Test
+    void getAllRoutes_passesPageAndSizeQueryParams() throws Exception {
+        RouteDto dto = new RouteDto();
+        dto.setId(7L);
+        when(routingService.getAllRoutes(2, 10))
+                .thenReturn(new PageResponse<>(List.of(dto), 2, 10, 21, 3, true));
+
+        mockMvc.perform(get("/api/v1/routing/all").param("page", "2").param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].id").value(7))
+                .andExpect(jsonPath("$.data.totalElements").value(21))
+                .andExpect(jsonPath("$.data.totalPages").value(3));
     }
 
     @Test

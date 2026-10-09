@@ -18,6 +18,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -263,6 +264,6 @@ public class IncidentVoteService implements IIncidentVoteService {
     }
 
     private Pageable pageable(int page, int size){
-        return PageResponse.pageRequest(page, size);
+        return PageResponse.pageRequest(page, size, Sort.by(Sort.Direction.DESC, "id"));
     }
 }

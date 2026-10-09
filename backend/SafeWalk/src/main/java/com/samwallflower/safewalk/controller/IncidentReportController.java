@@ -20,9 +20,12 @@ import java.util.List;
 @RequestMapping("${api.prefix}/incident-reports")
 public class IncidentReportController {
     private final IIncidentReportService incidentReportService;
+    private static final String DEFAULT_PAGE_SIZE="25";
+    private static final String DEFAULT_PAGE_NUMBER="0";
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse> getAllIncidentReports(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getAllIncidentReports(@RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getAllIncidentReports(page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
@@ -35,58 +38,60 @@ public class IncidentReportController {
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/user/{userId}/report")
-    public ResponseEntity<ApiResponse> getIncidentReportsByUserId(@PathVariable Long userId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getIncidentReportsByUserId(@PathVariable Long userId, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByUserId(userId, page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-category-name/report")
-    public ResponseEntity<ApiResponse> getIncidentReportsByCategoryName(@RequestParam String categoryName,@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getIncidentReportsByCategoryName(@RequestParam String categoryName,@RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByCategoryName(categoryName, page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-status/report")
-    public ResponseEntity<ApiResponse> getIncidentReportsByStatus(@RequestParam String status, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getIncidentReportsByStatus(@RequestParam String status, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByStatus(status, page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-time-range/report")
-    public ResponseEntity<ApiResponse> getIncidentReportsByTimeRange(@RequestParam String startTime, @RequestParam String endTime, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getIncidentReportsByTimeRange(@RequestParam String startTime, @RequestParam String endTime, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByTimeRange(startTime, endTime, page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
     @GetMapping("/by-upvotes/report")
-    public ResponseEntity<ApiResponse> getIncidentReportsByUpvotes(@RequestParam Integer upvotes, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getIncidentReportsByUpvotes(@RequestParam Integer upvotes, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByUpvotes(upvotes, page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
     @GetMapping("/by-downvotes/report")
-    public ResponseEntity<ApiResponse> getIncidentReportsByDownvotes(@RequestParam Integer downvotes, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getIncidentReportsByDownvotes(@RequestParam Integer downvotes, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByDownvotes(downvotes, page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
     @GetMapping("/by-anonymous/report")
-    public ResponseEntity<ApiResponse> getIncidentReportsByAnonymous(@RequestParam Boolean isAnonymous, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getIncidentReportsByAnonymous(@RequestParam Boolean isAnonymous, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByAnonymous(isAnonymous, page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-category-and-status/report")
-    public ResponseEntity<ApiResponse> getIncidentReportsByCategoryAndStatus(@RequestParam String categoryName, @RequestParam String status, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getIncidentReportsByCategoryAndStatus(@RequestParam String categoryName, @RequestParam String status, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByCategoryAndStatus(categoryName, status, page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
     // basically user can see which of their reports are hidden , under review active etc
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/{userId}/by-user-id-and-status/report")
-    public ResponseEntity<ApiResponse> getIncidentReportsByUserIdAndStatus(@PathVariable Long userId, @RequestParam String status, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getIncidentReportsByUserIdAndStatus(@PathVariable Long userId, @RequestParam String status, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByUserIdAndStatus(userId, status, page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
@@ -100,7 +105,7 @@ public class IncidentReportController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-time-range-and-status/report")
-    public ResponseEntity<ApiResponse> getIncidentReportsByTimeRangeAndStatus(@RequestParam String startTime, @RequestParam String endTime, @RequestParam String status, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getIncidentReportsByTimeRangeAndStatus(@RequestParam String startTime, @RequestParam String endTime, @RequestParam String status, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByTimeRangeAndStatus(startTime, endTime, status, page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
@@ -155,14 +160,14 @@ public class IncidentReportController {
     // User facing status endpoints -> should only show active reports nothing else
 
     @GetMapping("/by-status-active/report")
-    public ResponseEntity<ApiResponse> getAllActiveIncidentReports(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getAllActiveIncidentReports(@RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByStatus("ACTIVE", page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
 
 
     @GetMapping("/by-category-and-status-active/report")
-    public ResponseEntity<ApiResponse> getActiveIncidentReportsByCategory(@RequestParam String categoryName, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getActiveIncidentReportsByCategory(@RequestParam String categoryName, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByCategoryAndStatus(categoryName, "ACTIVE", page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
     }
@@ -175,15 +180,9 @@ public class IncidentReportController {
     }
 
     @GetMapping("/by-time-range-and-status-active/report")
-    public ResponseEntity<ApiResponse> getActiveIncidentReportsByTimeRange(@RequestParam String startTime, @RequestParam String endTime, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+    public ResponseEntity<ApiResponse> getActiveIncidentReportsByTimeRange(@RequestParam String startTime, @RequestParam String endTime, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size) {
         PageResponse<IncidentReportDto> incidentReports = incidentReportService.getIncidentReportsByTimeRangeAndStatus(startTime, endTime, "ACTIVE", page, size);
         return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReports));
-    }
-
-    @GetMapping("/page/active/report")
-    public ResponseEntity<ApiResponse> getActiveIncidentReportsPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int pageSize) {
-        PageResponse<IncidentReportDto> incidentReportsPage = incidentReportService.getActiveIncidentReportsPage(page, pageSize);
-        return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", incidentReportsPage));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -261,5 +260,12 @@ public class IncidentReportController {
     public ResponseEntity<ApiResponse> countIncidentReportsByTimeStampBetweenAndUserId(@RequestParam String start, @RequestParam String end, @PathVariable Long userId) {
         long count = incidentReportService.countIncidentReportsByTimeStampBetweenAndUserId(start, end, userId);
         return ResponseEntity.ok(new ApiResponse("Incident report count retrieved successfully", count));
+    }
+
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping("/reports/user/{userId}/category/{categoryId}")
+    public ResponseEntity<ApiResponse> getIncidentReportsByUserIdAndCategoryId(@PathVariable Long userId, @PathVariable Long categoryId, @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size){
+        PageResponse<IncidentReportDto> reports = incidentReportService.getIncidentReportsByUSerIdAndCategoryId(userId, categoryId, page, size);
+        return ResponseEntity.ok(new ApiResponse("Incident reports retrieved successfully", reports));
     }
 }
