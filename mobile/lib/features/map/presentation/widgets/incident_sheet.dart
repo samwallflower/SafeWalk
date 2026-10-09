@@ -5,8 +5,9 @@ import '../../../../core/format/format.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../incidents/domain/incident.dart';
 import '../../../places/data/geocode_api.dart';
+import '../../../votes/presentation/vote_buttons.dart';
 
-/// The detail card for a tapped incident. Voting arrives in M3, so the counts are read-only here.
+/// The detail card for a tapped incident, with upvote and downvote.
 class IncidentSheet extends ConsumerWidget {
   const IncidentSheet({
     super.key,
@@ -122,20 +123,10 @@ class IncidentSheet extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      _VoteChip(
-                        icon: Icons.thumb_up_outlined,
-                        text: '${incident.upvotes} Confirm',
-                      ),
-                      _VoteChip(
-                        icon: Icons.thumb_down_outlined,
-                        text: '${incident.downvotes} All clear',
-                      ),
-                    ],
+                  VoteButtons(
+                    reportId: incident.id,
+                    upvotes: incident.upvotes,
+                    downvotes: incident.downvotes,
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -149,35 +140,6 @@ class IncidentSheet extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _VoteChip extends StatelessWidget {
-  const _VoteChip({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.muted,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-          ),
-        ],
       ),
     );
   }

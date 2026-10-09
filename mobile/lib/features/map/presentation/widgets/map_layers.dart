@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/colors.dart';
 import '../../../incidents/domain/incident.dart';
+import '../../domain/clustering.dart';
 
 /// Lightweight reports as small red dots with a white border. Radius grows a little as you zoom in.
 class HeatDotsLayer extends StatelessWidget {
@@ -30,35 +31,44 @@ class HeatDotsLayer extends StatelessWidget {
   }
 }
 
-/// Tappable incidents at street level.
+/// Tappable incidents at street level. Incidents that overlap show as one dot with a number.
 class IncidentMarkersLayer extends StatelessWidget {
   const IncidentMarkersLayer({
     super.key,
-    required this.incidents,
-    required this.selectedId,
+    required this.clusters,
+    required this.selectedIds,
     required this.onTap,
   });
 
-  final List<Incident> incidents;
-  final int? selectedId;
-  final void Function(Incident incident) onTap;
+  final List<IncidentCluster> clusters;
+  final Set<int> selectedIds;
+  final void Function(IncidentCluster cluster) onTap;
 
   @override
   Widget build(BuildContext context) {
     return MarkerLayer(
       markers: [
-        for (final incident in incidents)
+        for (final cluster in clusters)
           Marker(
-            point: LatLng(incident.latitude, incident.longitude),
-            width: 44,
-            height: 44,
+            point: cluster.center,
+            width: 48,
+            height: 48,
             child: Semantics(
               button: true,
-              label: '${incident.category.name} incident',
+              label: cluster.count == 1
+                  ? '${cluster.incidents.first.category.name} incident'
+                  : '${cluster.count} incidents',
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => onTap(incident),
-                child: Center(child: _Dot(selected: incident.id == selectedId)),
+                onTap: () => onTap(cluster),
+                child: Center(
+                  child: _Dot(
+                    selected: cluster.incidents.any(
+                      (i) => selectedIds.contains(i.id),
+                    ),
+                    count: cluster.count,
+                  ),
+                ),
               ),
             ),
           ),
@@ -68,14 +78,15 @@ class IncidentMarkersLayer extends StatelessWidget {
 }
 
 class _Dot extends StatelessWidget {
-  const _Dot({required this.selected});
+  const _Dot({required this.selected, required this.count});
 
   final bool selected;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
     final size = selected ? 22.0 : 14.0;
-    return Container(
+    final dot = Container(
       width: size + 12,
       height: size + 12,
       alignment: Alignment.center,
@@ -92,6 +103,36 @@ class _Dot extends StatelessWidget {
           border: Border.all(color: Colors.white, width: selected ? 3 : 2),
         ),
       ),
+    );
+    if (count < 2) return dot;
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        dot,
+        Positioned(
+          top: -2,
+          right: -4,
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.foreground,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white, width: 1.5),
+            ),
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

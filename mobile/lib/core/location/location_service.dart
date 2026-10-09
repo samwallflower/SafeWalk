@@ -44,5 +44,12 @@ class LocationService {
     }
   }
 
+  /// True when location can be read right now without asking the user anything.
+  Future<bool> hasPermission() async {
+    final permission = await Geolocator.checkPermission();
+    return permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always;
+  }
+
   Future<bool> openSettings() => Geolocator.openAppSettings();
 }

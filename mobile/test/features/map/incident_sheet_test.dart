@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:safewalk_mobile/core/theme/theme.dart';
+import 'package:safewalk_mobile/features/auth/domain/session_user.dart';
+import 'package:safewalk_mobile/features/auth/presentation/state/session_controller.dart';
 import 'package:safewalk_mobile/features/categories/domain/incident_category.dart';
 import 'package:safewalk_mobile/features/incidents/domain/incident.dart';
 import 'package:safewalk_mobile/features/map/presentation/widgets/incident_sheet.dart';
+
+class _FakeSession extends SessionController {
+  @override
+  Future<SessionUser?> build() async => null;
+}
 
 Incident _incident({required bool anonymous, String? name}) => Incident(
   id: 1,
@@ -25,6 +32,7 @@ Incident _incident({required bool anonymous, String? name}) => Incident(
 );
 
 Widget _app(Incident incident, VoidCallback onClose) => ProviderScope(
+  overrides: [sessionProvider.overrideWith(_FakeSession.new)],
   child: MaterialApp(
     theme: buildTheme(downloadFont: false),
     home: Scaffold(
@@ -38,8 +46,10 @@ void main() {
     await tester.pumpWidget(_app(_incident(anonymous: true), () {}));
     expect(find.text('POOR LIGHTING'), findsOneWidget);
     expect(find.textContaining('Streetlamps are dark'), findsOneWidget);
-    expect(find.text('18 Confirm'), findsOneWidget);
-    expect(find.text('2 All clear'), findsOneWidget);
+    expect(find.text('Upvote'), findsOneWidget);
+    expect(find.text('Downvote'), findsOneWidget);
+    expect(find.text('18'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
     expect(find.text('Reported anonymously'), findsOneWidget);
   });
 

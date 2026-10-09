@@ -30,6 +30,12 @@ class MapBounds {
   final double south;
   final double east;
   final double north;
+
+  bool contains(LatLng point) =>
+      point.latitude >= south &&
+      point.latitude <= north &&
+      point.longitude >= west &&
+      point.longitude <= east;
 }
 
 class MapViewport {

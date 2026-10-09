@@ -72,6 +72,11 @@ class ApiClient {
     return data as Json;
   }
 
+  Future<List<Json>> postList(String path, {Object? body}) async {
+    final data = await _send('POST', path, body: body);
+    return (data as List<Object?>).cast<Json>();
+  }
+
   /// For endpoints whose response carries no `data` (verify, resend, ...).
   Future<void> postVoid(String path, {Object? body}) =>
       _send('POST', path, body: body);
@@ -85,5 +90,6 @@ class ApiClient {
     return data as Json;
   }
 
-  Future<void> delete(String path) => _send('DELETE', path);
+  Future<void> delete(String path, {Map<String, Object?>? query}) =>
+      _send('DELETE', path, query: query);
 }

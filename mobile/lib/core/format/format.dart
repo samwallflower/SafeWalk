@@ -8,3 +8,20 @@ String formatRelative(String timestamp, {DateTime? now}) {
   if (diff.inHours < 24) return '${diff.inHours}h ago';
   return '${diff.inDays}d ago';
 }
+
+/// 850 -> "850 m", 2430 -> "2.4 km"
+String formatDistance(double meters) => meters < 1000
+    ? '${meters.round()} m'
+    : '${(meters / 1000).toStringAsFixed(1)} km';
+
+/// Signed difference, e.g. "+120 m" or "-0.4 km".
+String formatDistanceDelta(double meters) =>
+    '${meters >= 0 ? '+' : '-'}${formatDistance(meters.abs())}';
+
+const _walkingMetersPerMinute = 5000 / 60;
+
+/// Rough walking time at 5 km/h. An estimate only: the backend does not return durations.
+int estimateWalkingMinutes(double meters) {
+  final minutes = (meters / _walkingMetersPerMinute).round();
+  return minutes < 1 ? 1 : minutes;
+}

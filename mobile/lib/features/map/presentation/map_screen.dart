@@ -11,14 +11,16 @@ import '../../../core/widgets/error_state.dart';
 import '../../auth/presentation/widgets/account_button.dart';
 import '../../incidents/domain/incident.dart';
 import '../../places/domain/place.dart';
+import '../domain/clustering.dart';
 import '../domain/map_config.dart';
 import '../domain/map_models.dart';
 import '../domain/sampling.dart';
 import 'state/map_data_provider.dart';
 import 'state/map_filters_controller.dart';
+import 'state/map_focus.dart';
 import 'state/map_view_controller.dart';
 import 'widgets/filter_sheet.dart';
-import 'widgets/incident_sheet.dart';
+import 'widgets/incident_pager.dart';
 import 'widgets/map_layers.dart';
 import 'widgets/map_status_chip.dart';
 import 'widgets/place_search_bar.dart';
@@ -35,7 +37,7 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   final _map = MapController();
-  Incident? _selected;
+  List<Incident> _selection = const [];
   LatLng? _me;
   bool _locating = false;
   double _zoom = defaultMapZoom;
@@ -61,12 +63,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   void _goTo(Place place) =>
       _map.move(LatLng(place.latitude, place.longitude), 15);
 
-  void _select(Incident incident) {
-    setState(() => _selected = incident);
-    _map.move(
-      LatLng(incident.latitude, incident.longitude),
-      math.max(_zoom, 15),
-    );
+  void _select(IncidentCluster cluster) {
+    // Newest first, so a fresh report is the first card you see at a busy spot.
+    final ordered = [...cluster.incidents]
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    setState(() => _selection = ordered);
+    _map.move(cluster.center, math.max(_zoom, 15));
   }
 
   Future<void> _locate() async {
@@ -115,18 +117,31 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       );
     }
 
+    ref.listen(mapFocusProvider, (previous, next) {
+      if (next == null) return;
+      _map.move(next.point, next.zoom);
+      ref.read(mapFocusProvider.notifier).clear();
+    });
+
     final data = ref.watch(mapDataProvider);
     final view = ref.watch(mapViewProvider);
     final filters = ref.watch(mapFiltersProvider);
     final theme = Theme.of(context);
     final center = view.center ?? defaultMapCenter;
 
-    final markers = nearestIncidents(
+    final nearest = nearestIncidents(
       data.incidents,
       center,
       maxIncidentMarkers,
     );
-    final showMarkers = markers.isNotEmpty;
+    final clusters = clusterIncidents(
+      nearest,
+      zoom: view.viewport?.zoom ?? _zoom,
+    );
+    final inView = view.viewport == null
+        ? nearest
+        : incidentsInBounds(nearest, view.viewport!.bounds);
+    final showMarkers = clusters.isNotEmpty;
 
     final String? status;
     IconData? statusIcon;
@@ -136,11 +151,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     } else if (data.filtersNeedZoom) {
       status = 'Zoom in to apply filters';
       statusIcon = Icons.filter_alt_outlined;
-    } else if (data.isLoading && data.heatPoints.isEmpty && markers.isEmpty) {
+    } else if (data.isLoading && data.heatPoints.isEmpty && nearest.isEmpty) {
       status = 'Loading incidents';
     } else if (view.wantsPoints) {
       status =
-          '${markers.length} ${markers.length == 1 ? 'incident' : 'incidents'} in view';
+          '${inView.length} ${inView.length == 1 ? 'incident' : 'incidents'} in view';
       statusIcon = Icons.place_outlined;
     } else {
       status = '${data.heatPoints.length} reports in this area';
@@ -163,7 +178,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               onMapReady: () => _reportCamera(_map.camera),
               onPositionChanged: (camera, hasGesture) => _reportCamera(camera),
               onTap: (tap, point) {
-                if (_selected != null) setState(() => _selected = null);
+                if (_selection.isNotEmpty) {
+                  setState(() => _selection = const []);
+                }
               },
             ),
             children: [
@@ -180,8 +197,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               if (showMarkers)
                 IncidentMarkersLayer(
-                  incidents: markers,
-                  selectedId: _selected?.id,
+                  clusters: clusters,
+                  selectedIds: {for (final i in _selection) i.id},
                   onTap: _select,
                 ),
               if (_me != null) MyLocationLayer(point: _me!),
@@ -262,7 +279,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ),
           Positioned(
             right: 12,
-            bottom: _selected == null ? 24 : 250,
+            bottom: _selection.isEmpty
+                ? 24
+                : (_selection.length > 1 ? 300 : 250),
             child: FloatingActionButton.small(
               heroTag: 'locate',
               tooltip: 'My location',
@@ -278,14 +297,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   : const Icon(Icons.my_location),
             ),
           ),
-          if (_selected != null)
+          if (_selection.isNotEmpty)
             Positioned(
               left: 12,
               right: 12,
               bottom: 12,
-              child: IncidentSheet(
-                incident: _selected!,
-                onClose: () => setState(() => _selected = null),
+              child: IncidentPager(
+                incidents: _selection,
+                onClose: () => setState(() => _selection = const []),
               ),
             ),
         ],
