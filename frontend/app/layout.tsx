@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/QueryProvider";
@@ -8,16 +8,17 @@ import { Header } from "@/features/layout/components/Header";
 
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"] });
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: { default: "SafeWalk", template: "%s" },
-  description: "Safety-aware walking navigation powered by crowd-sourced incident reports.",
+  description:
+    "Safety-aware walking navigation powered by crowd-sourced incident reports.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <a
           href="#main"
@@ -27,7 +28,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <QueryProvider>
           <Header />
-          <main id="main" tabIndex={-1} className="flex flex-1 flex-col outline-none">
+          <main
+            id="main"
+            tabIndex={-1}
+            className="flex flex-1 flex-col outline-none"
+          >
             {children}
           </main>
           <Footer />
