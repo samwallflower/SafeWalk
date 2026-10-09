@@ -16,7 +16,8 @@ export function ReportLookup() {
   const [input, setInput] = useState("");
   const [id, setId] = useState<number | null>(null);
   const report = useReportLookup(id);
-  const notFound = report.error instanceof ApiError && report.error.status === 404;
+  const notFound =
+    report.error instanceof ApiError && report.error.status === 404;
 
   return (
     <div className="space-y-3">
@@ -29,7 +30,10 @@ export function ReportLookup() {
         }}
       >
         <div className="relative flex-1">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <SearchIcon
+            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
           <Input
             aria-label="Report id"
             inputMode="numeric"
@@ -45,7 +49,10 @@ export function ReportLookup() {
       </form>
       {id !== null ? (
         report.isError && !notFound ? (
-          <ErrorState message={report.error.message} onRetry={() => void report.refetch()} />
+          <ErrorState
+            message={report.error.message}
+            onRetry={() => void report.refetch()}
+          />
         ) : (
           <ModerationTable
             rows={report.data ? [report.data] : undefined}

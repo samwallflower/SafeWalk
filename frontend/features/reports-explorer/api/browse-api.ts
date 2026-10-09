@@ -19,9 +19,9 @@ export const browseApi = {
     signal?: AbortSignal,
   ): Promise<IncidentPage> => {
     const result = await request<PageResponse<IncidentReportDto>>(
-      "/incident-reports/page/active/report",
+      "/incident-reports/by-status-active/report",
       {
-        query: { page: page - 1, pageSize },
+        query: { page: page - 1, size: pageSize },
         signal,
       },
     );

@@ -6,7 +6,8 @@ import { useSession } from "@/features/auth/hooks/useSession";
 
 import { votesApi } from "../api/votes-api";
 
-export const myVoteKey = (userId: number, reportId: number) => ["votes", "mine", userId, reportId] as const;
+export const myVoteKey = (userId: number, reportId: number) =>
+  ["votes", "mine", userId, reportId] as const;
 
 export function useMyVote(reportId: number) {
   const { user } = useSession();

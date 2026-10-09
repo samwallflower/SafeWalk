@@ -22,7 +22,10 @@ function useRefreshReports() {
     ]);
 }
 
-export function useUpdateReport(reportId: number, categories: readonly IncidentCategory[]) {
+export function useUpdateReport(
+  reportId: number,
+  categories: readonly IncidentCategory[],
+) {
   const { user } = useSession();
   const refresh = useRefreshReports();
   return useMutation({

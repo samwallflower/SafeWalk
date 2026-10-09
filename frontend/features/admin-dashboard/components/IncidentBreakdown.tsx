@@ -14,7 +14,7 @@ import { countByCategory, type StatsWindow } from "../lib/admin-stats";
 export function IncidentBreakdown({ window }: { window: StatsWindow }) {
   const reports = useWindowReports(window);
   const items = useMemo(
-    () => (reports.data ? countByCategory(reports.data) : []),
+    () => (reports.data ? countByCategory(reports.data.items) : []),
     [reports.data],
   );
   return (

@@ -42,9 +42,14 @@ export function useSetReportStatus() {
   const refresh = useRefresh();
   return useMutation({
     mutationKey: ["admin", "moderation", "set-status"],
-    mutationFn: ({ id, status }: { id: number; status: ReportStatus }) => moderationApi.setStatus(id, status),
+    mutationFn: ({ id, status }: { id: number; status: ReportStatus }) =>
+      moderationApi.setStatus(id, status),
     onSuccess: (_report, { status }) => {
-      toast.success(status === "ACTIVE" ? "Report is visible on the map" : "Report status updated");
+      toast.success(
+        status === "ACTIVE"
+          ? "Report is visible on the map"
+          : "Report status updated",
+      );
       return refresh();
     },
     onError: (error) => toast.error(clean(error.message)),

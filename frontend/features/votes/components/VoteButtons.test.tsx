@@ -37,7 +37,12 @@ describe("VoteButtons", () => {
     canVote = true;
     myVote = "UPVOTE";
     render(<VoteButtons reportId={1} upvotes={4} downvotes={0} />);
-    expect(screen.getByRole("button", { name: "Upvote (4)" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Downvote (0)" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Upvote (4)" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      screen.getByRole("button", { name: "Downvote (0)" }),
+    ).toHaveAttribute("aria-pressed", "false");
   });
 });

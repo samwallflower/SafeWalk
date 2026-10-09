@@ -6,7 +6,8 @@ import { useSession } from "@/features/auth/hooks/useSession";
 
 import { myReportsApi } from "../api/my-reports-api";
 
-export const myReportsKey = (userId: number | undefined) => ["me", userId, "reports"] as const;
+export const myReportsKey = (userId: number | undefined) =>
+  ["me", userId, "reports"] as const;
 
 export function useMyReports() {
   const { user } = useSession();
@@ -15,6 +16,7 @@ export function useMyReports() {
     queryFn: ({ signal }) => myReportsApi.list(user!.id, signal),
     enabled: user !== null,
     staleTime: 60_000,
-    select: (reports) => [...reports].sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
+    select: (reports) =>
+      [...reports].sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
   });
 }

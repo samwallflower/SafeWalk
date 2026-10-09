@@ -30,9 +30,20 @@ export function MyReportsList({ limit }: MyReportsListProps) {
   const manageable = limit === undefined;
 
   if (reports.isPending) return <ListSkeleton rows={limit ?? 4} />;
-  if (reports.isError) return <ErrorState message={reports.error.message} onRetry={() => void reports.refetch()} />;
+  if (reports.isError)
+    return (
+      <ErrorState
+        message={reports.error.message}
+        onRetry={() => void reports.refetch()}
+      />
+    );
   if (reports.data.length === 0) {
-    return <EmptyState title="No reports yet" description="Incidents you report will appear here with how the community responded." />;
+    return (
+      <EmptyState
+        title="No reports yet"
+        description="Incidents you report will appear here with how the community responded."
+      />
+    );
   }
 
   // The backend returns every report at once, so the page only renders a slice.
@@ -52,14 +63,22 @@ export function MyReportsList({ limit }: MyReportsListProps) {
       </ul>
       {manageable && remaining > 0 ? (
         <div className="flex justify-center pt-1">
-          <Button type="button" variant="secondary" onClick={() => setVisible((v) => v + PAGE_SIZE)}>
-            Show {Math.min(PAGE_SIZE, remaining)} more ({remaining.toLocaleString()} remaining)
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setVisible((v) => v + PAGE_SIZE)}
+          >
+            Show {Math.min(PAGE_SIZE, remaining)} more (
+            {remaining.toLocaleString()} remaining)
           </Button>
         </div>
       ) : null}
       {manageable ? (
         <>
-          <EditReportDialog report={editing} onOpenChange={(open) => !open && setEditing(null)} />
+          <EditReportDialog
+            report={editing}
+            onOpenChange={(open) => !open && setEditing(null)}
+          />
           <ConfirmDialog
             open={deleting !== null}
             onOpenChange={(open) => !open && setDeleting(null)}
@@ -67,7 +86,10 @@ export function MyReportsList({ limit }: MyReportsListProps) {
             description="It will be removed from the map for everyone. This cannot be undone."
             confirmLabel="Delete"
             isPending={remove.isPending}
-            onConfirm={() => deleting && remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) })}
+            onConfirm={() =>
+              deleting &&
+              remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) })
+            }
           />
         </>
       ) : null}

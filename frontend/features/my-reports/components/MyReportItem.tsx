@@ -36,16 +36,31 @@ export function MyReportItem({ report, onEdit, onDelete }: MyReportItemProps) {
           <span>Reported {formatDateTime(report.timestamp)}</span>
         </span>
         <span className="flex items-center gap-1">
-          <Link href={`/incidents/${report.id}`} className="font-semibold text-primary hover:underline">
+          <Link
+            href={`/incidents/${report.id}`}
+            className="font-semibold text-primary hover:underline"
+          >
             View Map Pin
           </Link>
           {onEdit ? (
-            <Button type="button" variant="ghost" size="icon-sm" aria-label="Edit report" onClick={() => onEdit(report)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Edit report"
+              onClick={() => onEdit(report)}
+            >
               <PencilIcon />
             </Button>
           ) : null}
           {onDelete ? (
-            <Button type="button" variant="ghost" size="icon-sm" aria-label="Delete report" onClick={() => onDelete(report)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Delete report"
+              onClick={() => onDelete(report)}
+            >
               <Trash2Icon />
             </Button>
           ) : null}

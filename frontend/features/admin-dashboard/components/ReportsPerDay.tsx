@@ -14,7 +14,7 @@ import { countPerDay, type StatsWindow } from "../lib/admin-stats";
 export function ReportsPerDay({ window }: { window: StatsWindow }) {
   const reports = useWindowReports(window);
   const points = useMemo(
-    () => (reports.data ? countPerDay(reports.data) : []),
+    () => (reports.data ? countPerDay(reports.data.items) : []),
     [reports.data],
   );
   return (

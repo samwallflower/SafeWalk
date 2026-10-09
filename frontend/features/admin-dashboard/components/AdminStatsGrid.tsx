@@ -68,7 +68,7 @@ export function AdminStatsGrid({ window }: { window: StatsWindow }) {
       <StatCard
         label="New reports"
         icon={<AlertTriangleIcon />}
-        value={reports.data ? reports.data.length.toLocaleString() : null}
+        value={reports.data ? reports.data.total.toLocaleString() : null}
         isLoading={reports.isPending}
         isError={reports.isError}
         detail={

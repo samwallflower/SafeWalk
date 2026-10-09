@@ -11,7 +11,11 @@ import { ModerationTable } from "./ModerationTable";
 import { ReportLookup } from "./ReportLookup";
 
 const TABS: { status: ListedStatus; label: string; empty: string }[] = [
-  { status: "UNDER_REVIEW", label: "Under review", empty: "Nothing is waiting for review" },
+  {
+    status: "UNDER_REVIEW",
+    label: "Under review",
+    empty: "Nothing is waiting for review",
+  },
   { status: "HIDDEN", label: "Hidden", empty: "No reports are hidden" },
 ];
 
@@ -28,7 +32,11 @@ export function ModerationScreen() {
       <SectionPanel
         title="Moderation queue"
         headerExtra={
-          <div className="flex gap-1 rounded-xl bg-muted p-1" role="tablist" aria-label="Report status">
+          <div
+            className="flex gap-1 rounded-xl bg-muted p-1"
+            role="tablist"
+            aria-label="Report status"
+          >
             {TABS.map((t) => (
               <Button
                 key={t.status}

@@ -2,7 +2,7 @@ import { format, subDays } from "date-fns";
 
 import { toIncident } from "@/features/incidents/api/incident-mappers";
 import type { Incident, IncidentReportDto } from "@/features/incidents/types";
-import { request } from "@/lib/http/request";
+import { requestAllPages, type AllPages } from "@/lib/http/paged";
 
 import { WINDOW_DAYS, type StatsWindow } from "../lib/admin-stats";
 
@@ -16,10 +16,10 @@ export const windowReportsApi = {
   activeIn: async (
     window: StatsWindow,
     signal?: AbortSignal,
-  ): Promise<Incident[]> => {
+  ): Promise<AllPages<Incident>> => {
     const end = new Date();
     const start = subDays(end, WINDOW_DAYS[window]);
-    const dtos = await request<IncidentReportDto[]>(
+    const result = await requestAllPages<IncidentReportDto>(
       "/incident-reports/by-time-range-and-status/report",
       {
         query: {
@@ -28,8 +28,9 @@ export const windowReportsApi = {
           status: "ACTIVE",
         },
         signal,
+        maxItems: 1000,
       },
     );
-    return dtos.map(toIncident);
+    return { ...result, items: result.items.map(toIncident) };
   },
 };

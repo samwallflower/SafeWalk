@@ -72,7 +72,7 @@ export function StatsGrid() {
       <StatCard
         label="Votes cast"
         icon={<VoteIcon />}
-        value={votes.data ? String(votes.data.length) : null}
+        value={votes.data !== undefined ? String(votes.data) : null}
         isLoading={votes.isPending}
         isError={votes.isError}
         detail="On other people's reports"

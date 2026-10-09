@@ -29,16 +29,26 @@ describe("request", () => {
 
   it("throws ApiError with the envelope message", async () => {
     mockFetch(409, { message: "Already voted", data: null });
-    await expect(request("/x")).rejects.toMatchObject({ status: 409, message: "Already voted" });
+    await expect(request("/x")).rejects.toMatchObject({
+      status: 409,
+      message: "Already voted",
+    });
   });
 
   it("handles security-handler error bodies", async () => {
-    mockFetch(403, { status: 403, error: "Access Denied", message: "No permission" });
+    mockFetch(403, {
+      status: 403,
+      error: "Access Denied",
+      message: "No permission",
+    });
     await expect(request("/x")).rejects.toBeInstanceOf(ApiError);
   });
 
   it("falls back to status text when the body is empty", async () => {
     mockFetch(401, null, "Unauthorized");
-    await expect(request("/x")).rejects.toMatchObject({ status: 401, message: "Unauthorized" });
+    await expect(request("/x")).rejects.toMatchObject({
+      status: 401,
+      message: "Unauthorized",
+    });
   });
 });

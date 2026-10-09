@@ -14,15 +14,28 @@ interface VoteButtonsProps {
   downvotes: number;
 }
 
-export function VoteButtons({ reportId, upvotes, downvotes }: VoteButtonsProps) {
+export function VoteButtons({
+  reportId,
+  upvotes,
+  downvotes,
+}: VoteButtonsProps) {
   const { canVote, myVote, isPending, vote } = useVote(reportId);
 
-  const button = (type: VoteType, count: number, label: string, activeClass: string, icon: React.ReactNode) => (
+  const button = (
+    type: VoteType,
+    count: number,
+    label: string,
+    activeClass: string,
+    icon: React.ReactNode,
+  ) => (
     <Button
       type="button"
       variant="secondary"
       size="sm"
-      className={cn("h-8 gap-1.5 px-2.5 font-semibold", myVote === type && activeClass)}
+      className={cn(
+        "h-8 gap-1.5 px-2.5 font-semibold",
+        myVote === type && activeClass,
+      )}
       aria-pressed={myVote === type}
       aria-label={`${label} (${count})`}
       disabled={!canVote || isPending}
@@ -36,8 +49,20 @@ export function VoteButtons({ reportId, upvotes, downvotes }: VoteButtonsProps) 
 
   return (
     <div className="flex items-center gap-2" aria-live="polite">
-      {button("UPVOTE", upvotes, "Upvote", "bg-info-soft text-primary", <ThumbsUpIcon />)}
-      {button("DOWNVOTE", downvotes, "Downvote", "bg-destructive-soft text-destructive", <ThumbsDownIcon />)}
+      {button(
+        "UPVOTE",
+        upvotes,
+        "Upvote",
+        "bg-info-soft text-primary",
+        <ThumbsUpIcon />,
+      )}
+      {button(
+        "DOWNVOTE",
+        downvotes,
+        "Downvote",
+        "bg-destructive-soft text-destructive",
+        <ThumbsDownIcon />,
+      )}
     </div>
   );
 }
