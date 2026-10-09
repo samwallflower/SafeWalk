@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Debug builds only: talk to the local backend over http through `adb reverse`. -->
+    <application android:usesCleartextTraffic="true" />
+</manifest>
