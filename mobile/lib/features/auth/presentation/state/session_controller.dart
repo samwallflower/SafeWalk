@@ -2,20 +2,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/network/providers.dart';
+import '../../../../core/widgets/inline_notice.dart';
 import '../../data/auth_api.dart';
 import '../../domain/jwt_decoder.dart';
 import '../../domain/session_user.dart';
 
 /// A one-off message for the login screen, e.g. "Your session expired".
-final sessionNoticeProvider = NotifierProvider<SessionNotice, String?>(
+class SessionMessage {
+  const SessionMessage(this.text, {this.tone = NoticeTone.error});
+
+  final String text;
+  final NoticeTone tone;
+}
+
+final sessionNoticeProvider = NotifierProvider<SessionNotice, SessionMessage?>(
   SessionNotice.new,
 );
 
-class SessionNotice extends Notifier<String?> {
+class SessionNotice extends Notifier<SessionMessage?> {
   @override
-  String? build() => null;
+  SessionMessage? build() => null;
 
-  void show(String message) => state = message;
+  void show(String message, {NoticeTone tone = NoticeTone.error}) =>
+      state = SessionMessage(message, tone: tone);
   void clear() => state = null;
 }
 

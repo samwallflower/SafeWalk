@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/routing/app_routes.dart';
 import '../../../core/widgets/form_error.dart';
+import '../../../core/widgets/inline_notice.dart';
 import '../data/auth_api.dart';
 import '../domain/validators.dart';
 import 'state/session_controller.dart';
@@ -50,7 +51,10 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
           .verify(_email.text.trim(), _code.text.trim());
       ref
           .read(sessionNoticeProvider.notifier)
-          .show('Email verified. You can sign in now.');
+          .show(
+            'Email verified. You can sign in now.',
+            tone: NoticeTone.success,
+          );
       if (mounted) context.go(AppRoutes.login);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);

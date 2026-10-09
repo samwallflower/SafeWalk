@@ -6,9 +6,11 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/state/session_controller.dart';
 import '../../features/auth/presentation/verify_screen.dart';
-import '../../features/startup/presentation/home_placeholder.dart';
+import '../../features/map/presentation/map_screen.dart';
+import '../widgets/coming_soon_screen.dart';
 import '../widgets/loading.dart';
 import 'app_routes.dart';
+import 'app_shell.dart';
 import 'route_guard.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -47,9 +49,36 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) =>
             VerifyScreen(email: state.uri.queryParameters['email'] ?? ''),
       ),
-      GoRoute(
-        path: AppRoutes.home,
-        builder: (context, state) => const HomePlaceholder(),
+      ShellRoute(
+        builder: (context, state, child) =>
+            AppShell(location: state.uri.path, child: child),
+        routes: [
+          GoRoute(
+            path: AppRoutes.home,
+            builder: (context, state) => const MapScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.walk,
+            builder: (context, state) => const ComingSoonScreen(
+              title: 'Walk',
+              icon: Icons.directions_walk,
+            ),
+          ),
+          GoRoute(
+            path: AppRoutes.report,
+            builder: (context, state) => const ComingSoonScreen(
+              title: 'Report an incident',
+              icon: Icons.warning_amber_rounded,
+            ),
+          ),
+          GoRoute(
+            path: AppRoutes.safety,
+            builder: (context, state) => const ComingSoonScreen(
+              title: 'My Safety',
+              icon: Icons.shield_outlined,
+            ),
+          ),
+        ],
       ),
     ],
   );

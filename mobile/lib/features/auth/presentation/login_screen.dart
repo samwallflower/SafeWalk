@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/routing/app_routes.dart';
-import '../../../core/widgets/form_error.dart';
+import '../../../core/widgets/inline_notice.dart';
 import '../domain/validators.dart';
 import 'state/session_controller.dart';
 import 'widgets/auth_scaffold.dart';
@@ -62,7 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final notice = ref.watch(sessionNoticeProvider);
-    final banner = _error ?? notice;
+    final banner = _error != null ? SessionMessage(_error!) : notice;
     return AuthScaffold(
       title: 'Welcome back',
       subtitle: 'Sign in to report incidents and plan safer walks.',
@@ -74,7 +74,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (banner != null) ...[
-                  FormError(banner),
+                  InlineNotice(banner.text, tone: banner.tone),
                   const SizedBox(height: 16),
                 ],
                 TextFormField(

@@ -11,7 +11,9 @@ const _offlineMessage =
 ApiException mapDioError(DioException error) {
   final response = error.response;
   if (response == null) {
-    if (kDebugMode) debugPrint('Network failure: ${error.type} ${error.error}');
+    if (kDebugMode && error.type != DioExceptionType.cancel) {
+      debugPrint('Network failure: ${error.type} ${error.error}');
+    }
     return const ApiException(0, _offlineMessage, failure: ApiFailure.network);
   }
   final status = response.statusCode ?? 0;
