@@ -21,6 +21,10 @@ class GeolocatorTracker implements LocationTracker {
         notificationTitle: 'SafeWalk walk in progress',
         notificationText: 'Sharing your location while you walk. Open SafeWalk to end the walk.',
         enableWakeLock: true,
+        notificationIcon: AndroidResource(
+          name: 'ic_stat_safewalk',
+          defType: 'drawable',
+        ),
         setOngoing: true,
       ),
     );

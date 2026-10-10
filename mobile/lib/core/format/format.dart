@@ -46,3 +46,26 @@ String formatClock(Duration elapsed) {
   String two(int n) => n.toString().padLeft(2, '0');
   return h > 0 ? '$h:${two(m)}:${two(s)}' : '${two(m)}:${two(s)}';
 }
+
+const _months = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/// "10 Oct 2026, 12:05". Backend timestamps are zone-less, so they are shown as written.
+String formatDateTime(String timestamp) {
+  final t = DateTime.tryParse(timestamp);
+  if (t == null) return '';
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${t.day} ${_months[t.month - 1]} ${t.year}, ${two(t.hour)}:${two(t.minute)}';
+}

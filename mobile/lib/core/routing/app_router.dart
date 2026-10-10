@@ -7,9 +7,12 @@ import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/state/session_controller.dart';
 import '../../features/auth/presentation/verify_screen.dart';
 import '../../features/map/presentation/map_screen.dart';
+import '../../features/dashboard/presentation/safety_hub_screen.dart';
+import '../../features/my_reports/presentation/my_reports_screen.dart';
 import '../../features/report/presentation/report_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/walk_history/presentation/walk_history_screen.dart';
 import '../../features/walk_session/presentation/walk_tab.dart';
-import '../widgets/coming_soon_screen.dart';
 import '../widgets/loading.dart';
 import 'app_routes.dart';
 import 'app_shell.dart';
@@ -82,10 +85,21 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.safety,
-                builder: (context, state) => const ComingSoonScreen(
-                  title: 'My Safety',
-                  icon: Icons.shield_outlined,
-                ),
+                builder: (context, state) => const SafetyHubScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'history',
+                    builder: (context, state) => const WalkHistoryScreen(),
+                  ),
+                  GoRoute(
+                    path: 'reports',
+                    builder: (context, state) => const MyReportsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'settings',
+                    builder: (context, state) => const SettingsScreen(),
+                  ),
+                ],
               ),
             ],
           ),

@@ -2,6 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:safewalk_mobile/core/format/format.dart';
 
 void main() {
+  test('a timestamp reads as a day and time, as written', () {
+    expect(formatDateTime('2026-10-10T09:05:00'), '10 Oct 2026, 09:05');
+    expect(formatDateTime('garbage'), '');
+  });
+
   test('time between two timestamps and a running clock', () {
     expect(
       formatTimeBetween('2026-10-10T10:00:00', '2026-10-10T10:24:00'),

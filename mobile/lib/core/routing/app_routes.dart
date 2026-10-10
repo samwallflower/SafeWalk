@@ -7,6 +7,9 @@ abstract final class AppRoutes {
   static const walk = '/walk';
   static const report = '/report';
   static const safety = '/safety';
+  static const walkHistory = '/safety/history';
+  static const myReports = '/safety/reports';
+  static const settings = '/safety/settings';
 
   static const guestOnly = {login, register, verify};
 }

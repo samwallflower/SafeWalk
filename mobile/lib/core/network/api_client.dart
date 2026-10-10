@@ -60,6 +60,16 @@ class ApiClient {
     return (data as List<Object?>).cast<Json>();
   }
 
+  /// A paged endpoint's `content`, for lists that are short by nature (the backend caps a page at 50).
+  Future<List<Json>> getPageContent(
+    String path, {
+    Map<String, Object?>? query,
+    CancelToken? cancelToken,
+  }) async {
+    final page = await getObject(path, query: query, cancelToken: cancelToken);
+    return ((page['content'] as List<Object?>?) ?? const []).cast<Json>();
+  }
+
   Future<Object?> getValue(String path, {Map<String, Object?>? query}) =>
       _send('GET', path, query: query);
 

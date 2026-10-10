@@ -34,7 +34,7 @@ class LocalAlertNotifier implements AlertNotifier {
     if (_ready) return;
     await _plugin.initialize(
       settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        android: AndroidInitializationSettings('ic_stat_safewalk'),
       ),
     );
     await _plugin
