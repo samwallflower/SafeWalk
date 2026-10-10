@@ -74,7 +74,9 @@ public class EmergencyContactService implements IEmergencyContactService{
     @Transactional
     public void deleteEmergencyContact(Long userId, Long contactId) {
         SecurityUtils.checkOwnershipOrAdmin(userId);
-        emergencyContactRepository.delete(validateOwnership(userId, contactId));
+        EmergencyContact contact = validateOwnership(userId, contactId);
+        emergencyContactRepository.removeFromNotifiedLists(contactId);
+        emergencyContactRepository.delete(contact);
     }
 
     @Override
