@@ -88,6 +88,10 @@ class _FakeWalkApi implements WalkSessionApi {
   }
 
   @override
+  Future<WalkSession> resolveIdleWarning(int sessionId, int userId) async =>
+      _session(sessionId, SessionStatus.active);
+
+  @override
   Future<WalkSession> byId(int sessionId, int userId) async =>
       (byIdAnswer ?? () => _session(sessionId, SessionStatus.active))();
 }

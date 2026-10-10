@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
 
-enum NoticeTone { error, success, info }
+enum NoticeTone { error, success, info, warning }
 
-/// An inline banner: red for errors, green for success, blue for information.
+/// An inline banner: red for errors, green for success, blue for information, amber for warnings.
 class InlineNotice extends StatelessWidget {
   const InlineNotice(this.message, {super.key, this.tone = NoticeTone.error});
 
@@ -28,6 +28,11 @@ class InlineNotice extends StatelessWidget {
         AppColors.infoSoft,
         AppColors.primary,
         Icons.info_outline,
+      ),
+      NoticeTone.warning => (
+        AppColors.warningSoft,
+        AppColors.warning,
+        Icons.warning_amber_rounded,
       ),
     };
     return Semantics(

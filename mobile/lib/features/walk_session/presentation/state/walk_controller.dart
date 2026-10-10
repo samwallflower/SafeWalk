@@ -48,6 +48,7 @@ class WalkState {
     this.emergencyActive = false,
     this.finished,
     this.message,
+    this.latest,
   });
 
   final WalkPhase phase;
@@ -63,6 +64,9 @@ class WalkState {
   final WalkSession? finished;
   final String? message;
 
+  /// The most recent view of the walk from the server (alarm and deviation flags).
+  final WalkSession? latest;
+
   WalkState copyWith({
     WalkPhase? phase,
     WalkSession? session,
@@ -72,6 +76,7 @@ class WalkState {
     bool? emergencyActive,
     WalkSession? finished,
     String? Function()? message,
+    WalkSession? latest,
   }) => WalkState(
     phase: phase ?? this.phase,
     session: session ?? this.session,
@@ -81,6 +86,7 @@ class WalkState {
     emergencyActive: emergencyActive ?? this.emergencyActive,
     finished: finished ?? this.finished,
     message: message != null ? message() : this.message,
+    latest: latest ?? this.latest,
   );
 }
 
@@ -325,10 +331,10 @@ class WalkController extends Notifier<WalkState> {
       if (latest.isFinished) {
         _finish(latest);
       } else {
-        final emergency = latest.status == SessionStatus.emergency;
-        if (emergency != state.emergencyActive) {
-          state = state.copyWith(emergencyActive: emergency);
-        }
+        state = state.copyWith(
+          latest: latest,
+          emergencyActive: latest.status == SessionStatus.emergency,
+        );
       }
     } on ApiException {
       // Keep going; the next poll will try again.
@@ -354,6 +360,13 @@ class WalkController extends Notifier<WalkState> {
     } on ApiException catch (e) {
       state = state.copyWith(message: () => e.message);
       return false;
+    }
+  }
+
+  /// The server pushed an emergency (or its resolution) before the next poll.
+  void setEmergency(bool active) {
+    if (state.phase == WalkPhase.active && state.emergencyActive != active) {
+      state = state.copyWith(emergencyActive: active);
     }
   }
 

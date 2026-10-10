@@ -15,4 +15,6 @@ abstract final class AppColors {
   static const infoSoft = Color(0xFFE3EDFB);
   static const destructiveSoft = Color(0xFFFBE7E8);
   static const successSoft = Color(0xFFE2F3E8);
+  static const warning = Color(0xFF8A5A00);
+  static const warningSoft = Color(0xFFFFF1D1);
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/safety/presentation/state/safety_controller.dart';
 import '../../features/walk_session/presentation/state/walk_controller.dart';
 
 class _Tab {
@@ -32,6 +33,13 @@ class AppShell extends ConsumerWidget {
       if (next == WalkPhase.pending && shell.currentIndex != 1) {
         shell.goBranch(1);
       }
+    });
+    // "Are you safe?" must be seen, whatever tab you are on.
+    ref.listen(safetyProvider.select((s) => s.idlePrompt != null), (
+      previous,
+      next,
+    ) {
+      if (next && shell.currentIndex != 1) shell.goBranch(1);
     });
     return Scaffold(
       body: shell,

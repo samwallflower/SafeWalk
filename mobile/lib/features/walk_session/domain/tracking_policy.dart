@@ -2,8 +2,8 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/geo/haversine.dart';
 
-/// How often the phone reports its position. The server treats a session with no update for 3 minutes as idle,
-/// so even a person standing still must send something well inside that.
+/// How often the phone reports its position. The server flags a session with no update for 3 minutes, and also
+/// one whose position has not moved for 3 minutes, so a person standing still keeps reporting and the server decides.
 abstract final class TrackingPolicy {
   /// Never send more often than this.
   static const minInterval = Duration(seconds: 10);

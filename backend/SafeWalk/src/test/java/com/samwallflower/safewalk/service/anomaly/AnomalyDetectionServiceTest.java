@@ -172,6 +172,114 @@ class AnomalyDetectionServiceTest {
         verifyNoInteractions(notificationService, emergencyService);
     }
 
+    // ---------- checkIdleTimeout: movement based (user standing still while the phone keeps reporting) ----------
+
+    @Test
+    void checkIdleTimeout_triggersWarning_whenUserStationary_evenThoughLocationUpdatesAreFresh() {
+        WalkSession session = buildSession(1L, 0, 0, 1, 1);
+        session.setLastLocationUpdate(LocalDateTime.now());                       // the phone keeps reporting...
+        session.setLastMovementDetectedAt(LocalDateTime.now().minusSeconds(200)); // ...but has not moved for 200s (> 180s)
+        session.setAlarmTriggered(false);
+
+        service.checkIdleTimeout(session);
+
+        assertThat(session.getAlarmTriggered()).isTrue();
+        verify(notificationService, times(1)).pushIdleWarning(1L);
+        verifyNoInteractions(emergencyService);
+    }
+
+    @Test
+    void checkIdleTimeout_doesNothing_whenUserMovedRecently() {
+        WalkSession session = buildSession(1L, 0, 0, 1, 1);
+        session.setLastLocationUpdate(LocalDateTime.now());
+        session.setLastMovementDetectedAt(LocalDateTime.now().minusSeconds(30));
+
+        service.checkIdleTimeout(session);
+
+        assertThat(session.getAlarmTriggered()).isFalse();
+        verify(notificationService, never()).pushIdleWarning(anyLong());
+        verifyNoInteractions(emergencyService);
+    }
+
+    @Test
+    void checkIdleTimeout_doesNotEscalate_whenStationaryButGracePeriodNotElapsed() {
+        WalkSession session = buildSession(1L, 0, 0, 1, 1);
+        session.setLastLocationUpdate(LocalDateTime.now());
+        session.setLastMovementDetectedAt(LocalDateTime.now().minusSeconds(190)); // 10s past threshold, grace is 45s
+        session.setAlarmTriggered(true);
+
+        service.checkIdleTimeout(session);
+
+        verify(notificationService, never()).pushIdleWarning(anyLong());      // not warned a second time
+        verifyNoInteractions(emergencyService);
+    }
+
+    @Test
+    void checkIdleTimeout_triggersEmergency_whenStationaryPastGracePeriod() {
+        WalkSession session = buildSession(1L, 0, 0, 1, 1);
+        session.setLastLocationUpdate(LocalDateTime.now());
+        session.setLastMovementDetectedAt(LocalDateTime.now().minusSeconds(230)); // 180 + 50 > 45s grace
+        session.setAlarmTriggered(true);
+
+        service.checkIdleTimeout(session);
+
+        verify(emergencyService, times(1)).triggerEmergencySystem(1L, EmergencyTriggerSource.IDLE_TIMEOUT);
+    }
+
+    @Test
+    void checkIdleTimeout_triggersEmergencyExactlyOnce_whenUpdatesAreAlsoStale() {
+        // both clocks are old: the emergency must still be triggered once per check, not once per code path
+        WalkSession session = buildSession(1L, 0, 0, 1, 1);
+        session.setLastLocationUpdate(LocalDateTime.now().minusSeconds(230));
+        session.setLastMovementDetectedAt(LocalDateTime.now().minusSeconds(230));
+        session.setAlarmTriggered(true);
+
+        service.checkIdleTimeout(session);
+
+        verify(emergencyService, times(1)).triggerEmergencySystem(1L, EmergencyTriggerSource.IDLE_TIMEOUT);
+    }
+
+    @Test
+    void checkIdleTimeout_warnsExactlyOnce_whenUpdatesAreAlsoStale() {
+        WalkSession session = buildSession(1L, 0, 0, 1, 1);
+        session.setLastLocationUpdate(LocalDateTime.now().minusSeconds(200));
+        session.setLastMovementDetectedAt(LocalDateTime.now().minusSeconds(200));
+        session.setAlarmTriggered(false);
+
+        service.checkIdleTimeout(session);
+
+        verify(notificationService, times(1)).pushIdleWarning(1L);
+        verify(walkSessionRepository, times(1)).save(session);
+    }
+
+    @Test
+    void checkIdleTimeout_fallsBackToLastLocationUpdate_whenNoMovementTimestampYet() {
+        // sessions created before the movement fields existed
+        WalkSession session = buildSession(1L, 0, 0, 1, 1);
+        session.setLastMovementDetectedAt(null);
+        session.setLastLocationUpdate(LocalDateTime.now().minusSeconds(200));
+        session.setAlarmTriggered(false);
+
+        service.checkIdleTimeout(session);
+
+        assertThat(session.getAlarmTriggered()).isTrue();
+        verify(notificationService, times(1)).pushIdleWarning(1L);
+    }
+
+    @Test
+    void checkIdleTimeout_treatsNullAlarmFlagAsNotTriggered() {
+        // old rows can have NULL in the boolean column
+        WalkSession session = buildSession(1L, 0, 0, 1, 1);
+        session.setLastLocationUpdate(LocalDateTime.now());
+        session.setLastMovementDetectedAt(LocalDateTime.now().minusSeconds(200));
+        session.setAlarmTriggered(null);
+
+        service.checkIdleTimeout(session);
+
+        assertThat(session.getAlarmTriggered()).isTrue();
+        verify(notificationService, times(1)).pushIdleWarning(1L);
+    }
+
     // ---------- checkRouteDeviation ----------
 
     @Test

@@ -26,6 +26,8 @@ class WalkSession {
     required this.destinationLatitude,
     required this.destinationLongitude,
     required this.autoCompleted,
+    this.alarmTriggered = false,
+    this.deviationTriggered = false,
   });
 
   factory WalkSession.fromJson(Map<String, Object?> json) => WalkSession(
@@ -40,6 +42,8 @@ class WalkSession {
     destinationLatitude: (json['destinationLatitude'] as num?)?.toDouble(),
     destinationLongitude: (json['destinationLongitude'] as num?)?.toDouble(),
     autoCompleted: json['autoCompleted'] == true,
+    alarmTriggered: json['alarmTriggered'] == true,
+    deviationTriggered: json['deviationTriggered'] == true,
   );
 
   final int id;
@@ -55,6 +59,12 @@ class WalkSession {
 
   /// The server ended it because the walker reached the destination.
   final bool autoCompleted;
+
+  /// The server sent the "are you safe?" warning and is waiting for an answer.
+  final bool alarmTriggered;
+
+  /// The walker is off the planned route.
+  final bool deviationTriggered;
 
   bool get isFinished => status == SessionStatus.completed;
 }

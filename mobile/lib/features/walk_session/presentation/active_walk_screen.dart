@@ -14,6 +14,9 @@ import '../../../core/widgets/inline_notice.dart';
 import '../../map/domain/map_config.dart';
 import '../../map/presentation/widgets/map_layers.dart';
 import '../../routing/presentation/widgets/route_map_layers.dart';
+import '../../safety/presentation/state/safety_controller.dart';
+import '../../safety/presentation/widgets/idle_prompt_overlay.dart';
+import '../../safety/presentation/widgets/off_route_banner.dart';
 import 'state/walk_controller.dart';
 
 const _tileUrl =
@@ -93,6 +96,7 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
       );
     }
     final walk = ref.watch(walkProvider);
+    final safety = ref.watch(safetyProvider);
     final theme = Theme.of(context);
     final route = walk.route;
     final position = walk.position;
@@ -208,6 +212,18 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
                       ),
                     ),
                   ),
+                  if (safety.connectionLost) ...[
+                    const SizedBox(height: 8),
+                    const InlineNotice('Connection lost. Reconnecting...'),
+                  ],
+                  if (safety.offRoute) ...[
+                    const SizedBox(height: 8),
+                    OffRouteBanner(
+                      onDismiss: ref
+                          .read(safetyProvider.notifier)
+                          .dismissOffRoute,
+                    ),
+                  ],
                   if (walk.sendFailing) ...[
                     const SizedBox(height: 8),
                     const InlineNotice(
@@ -262,6 +278,16 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
               label: Text(_ending ? 'Ending...' : 'End walk'),
             ),
           ),
+          if (safety.idlePrompt != null)
+            Positioned.fill(
+              child: IdlePromptOverlay(
+                prompt: safety.idlePrompt!,
+                error: safety.error,
+                onImOk: () async {
+                  await ref.read(safetyProvider.notifier).imOk();
+                },
+              ),
+            ),
         ],
       ),
     );

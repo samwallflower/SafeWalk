@@ -60,6 +60,14 @@ class WalkSessionApi {
         ),
       );
 
+  /// "I'm OK": answers the idle warning and tells the server the walker has moved.
+  Future<WalkSession> resolveIdleWarning(int sessionId, int userId) async =>
+      WalkSession.fromJson(
+        await _client.putObject(
+          '/walk-sessions/$sessionId/user/$userId/resolve-idle-warning/session',
+        ),
+      );
+
   Future<WalkSession> byId(int sessionId, int userId) async =>
       WalkSession.fromJson(
         await _client.getObject(
