@@ -13,11 +13,17 @@ class RouteResultsSheet extends StatelessWidget {
     required this.routes,
     required this.selectedId,
     required this.onSelect,
+    this.onStart,
+    this.starting = false,
   });
 
   final List<DecodedRoute> routes;
   final int? selectedId;
   final void Function(DecodedRoute route) onSelect;
+
+  /// Starts a walk on the selected route. Null hides the button.
+  final VoidCallback? onStart;
+  final bool starting;
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +31,11 @@ class RouteResultsSheet extends StatelessWidget {
     final penalties = routes.map((r) => r.route.safetyPenaltyMeters).toList();
     final minPenalty = penalties.reduce(math.min);
     final maxPenalty = penalties.reduce(math.max);
+    final selectedRank = routes
+        .where((r) => r.route.id == selectedId)
+        .firstOrNull
+        ?.route
+        .rank;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.4,
@@ -62,6 +73,27 @@ class RouteResultsSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+            if (onStart != null) ...[
+              FilledButton.icon(
+                onPressed: starting ? null : onStart,
+                icon: starting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.directions_walk),
+                label: Text(
+                  starting
+                      ? 'Starting...'
+                      : 'Start walking on Route ${selectedRank ?? 1}',
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             for (final route in routes) ...[
               RouteCard(
                 item: route,

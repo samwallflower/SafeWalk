@@ -8,7 +8,7 @@ import '../../features/auth/presentation/state/session_controller.dart';
 import '../../features/auth/presentation/verify_screen.dart';
 import '../../features/map/presentation/map_screen.dart';
 import '../../features/report/presentation/report_screen.dart';
-import '../../features/routing/presentation/plan_screen.dart';
+import '../../features/walk_session/presentation/walk_tab.dart';
 import '../widgets/coming_soon_screen.dart';
 import '../widgets/loading.dart';
 import 'app_routes.dart';
@@ -66,7 +66,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.walk,
-                builder: (context, state) => const PlanScreen(),
+                builder: (context, state) => const WalkTab(),
               ),
             ],
           ),

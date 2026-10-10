@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/config/env.dart';
+import '../../../core/format/format.dart';
 import '../../../core/location/location_service.dart';
+import '../../walk_session/presentation/state/walk_controller.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/inline_notice.dart';
 import '../../map/domain/map_config.dart';
@@ -32,6 +34,7 @@ class PlanScreen extends ConsumerStatefulWidget {
 class _PlanScreenState extends ConsumerState<PlanScreen> {
   final _map = MapController();
   bool _locating = false;
+  bool _starting = false;
 
   @override
   void initState() {
@@ -87,6 +90,65 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
         ),
       );
   }
+
+  Future<void> _startWalk() async {
+    final plan = ref.read(planProvider);
+    final route = plan.selected;
+    final origin = plan.origin;
+    final destination = plan.destination;
+    if (_starting || route == null || origin == null || destination == null) {
+      return;
+    }
+    setState(() => _starting = true);
+    final result = await ref
+        .read(walkProvider.notifier)
+        .start(route: route, origin: origin, destination: destination);
+    if (!mounted) return;
+    setState(() => _starting = false);
+
+    switch (result.outcome) {
+      case StartOutcome.started:
+        break; // The Walk tab switches to the walking screen by itself.
+      case StartOutcome.tooFar:
+        await _info(
+          'You are too far from this route',
+          "You're ${formatDistance(result.distanceMeters ?? 0)} from it. A walk can only start near its route, so SafeWalk can tell if you leave it. Move closer, or plan the route from \"My location\".",
+        );
+      case StartOutcome.noLocation:
+        await _info('Location is needed', switch (result.failure) {
+          LocationFailure.serviceDisabled =>
+            'Turn on location services, then try again.',
+          LocationFailure.deniedForever => 'Location is blocked for SafeWalk. Allow it in the app settings, then try again.',
+          _ => 'SafeWalk needs your location to follow your walk. Allow it and try again.',
+        });
+      case StartOutcome.alreadyActive:
+        break; // The screen now shows the unfinished walk.
+      case StartOutcome.failed:
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                result.message ?? "Couldn't start the walk. Try again.",
+              ),
+            ),
+          );
+    }
+  }
+
+  Future<void> _info(String title, String message) => showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
+  );
 
   void _fit(List<LatLng> points) {
     if (points.length < 2) return;
@@ -292,6 +354,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
             RouteResultsSheet(
               routes: plan.routes,
               selectedId: plan.selectedId,
+              onStart: _startWalk,
+              starting: _starting,
               onSelect: (route) {
                 controller.select(route.route.id);
                 _fit(route.points);

@@ -15,6 +15,9 @@ class _FakeRoutingApi implements RoutingApi {
   int calls = 0;
 
   @override
+  Future<RouteOption> byId(int routeId) => throw UnimplementedError();
+
+  @override
   Future<List<RouteOption>> recommend(RouteRequest request) {
     calls++;
     return handler(request);

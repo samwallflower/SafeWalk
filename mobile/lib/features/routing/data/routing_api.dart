@@ -31,6 +31,10 @@ class RoutingApi {
 
   final ApiClient _client;
 
+  /// One saved route, e.g. to draw the route of a walk that is being resumed.
+  Future<RouteOption> byId(int routeId) async =>
+      RouteOption.fromJson(await _client.getObject('/routing/$routeId/route'));
+
   /// Ranked alternatives; rank 1 has the lowest virtual distance (distance plus safety penalty).
   Future<List<RouteOption>> recommend(RouteRequest request) async {
     final list = await _client.postList(

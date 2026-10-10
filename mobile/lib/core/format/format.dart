@@ -25,3 +25,24 @@ int estimateWalkingMinutes(double meters) {
   final minutes = (meters / _walkingMetersPerMinute).round();
   return minutes < 1 ? 1 : minutes;
 }
+
+/// Minutes between two zone-less timestamps as "24 min" or "1 h 5 min". Empty when either is missing or invalid.
+String formatTimeBetween(String? start, String? end) {
+  final a = start == null ? null : DateTime.tryParse(start);
+  final b = end == null ? null : DateTime.tryParse(end);
+  if (a == null || b == null) return '';
+  final minutes = b.difference(a).inMinutes;
+  if (minutes < 0) return '';
+  if (minutes < 60) return '$minutes min';
+  return '${minutes ~/ 60} h ${minutes % 60} min';
+}
+
+/// A running clock like "12:05" or "1:02:09".
+String formatClock(Duration elapsed) {
+  final total = elapsed.inSeconds < 0 ? 0 : elapsed.inSeconds;
+  final h = total ~/ 3600;
+  final m = (total % 3600) ~/ 60;
+  final s = total % 60;
+  String two(int n) => n.toString().padLeft(2, '0');
+  return h > 0 ? '$h:${two(m)}:${two(s)}' : '${two(m)}:${two(s)}';
+}

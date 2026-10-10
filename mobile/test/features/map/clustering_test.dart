@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:safewalk_mobile/core/geo/haversine.dart';
 import 'package:safewalk_mobile/features/categories/domain/incident_category.dart';
 import 'package:safewalk_mobile/features/incidents/domain/incident.dart';
 import 'package:safewalk_mobile/features/map/domain/clustering.dart';
@@ -20,39 +21,52 @@ Incident _at(int id, double lat, double lng) => Incident(
 );
 
 void main() {
-  test('reports a few meters apart become one dot with a count', () {
-    final clusters = clusterIncidents([
-      _at(1, 52.9548, -1.1581),
-      _at(2, 52.95481, -1.15811),
-      _at(3, 52.95479, -1.15809),
-    ], zoom: 16);
-    expect(clusters, hasLength(1));
-    expect(clusters.single.count, 3);
-  });
-
-  test('reports far apart stay separate', () {
-    final clusters = clusterIncidents([
-      _at(1, 52.9548, -1.1581),
-      _at(2, 52.9648, -1.1581),
-    ], zoom: 16);
-    expect(clusters, hasLength(2));
-  });
-
-  test('zooming out merges dots that were separate when zoomed in', () {
-    final points = [
-      _at(1, 52.9548, -1.1581),
-      _at(2, 52.9551, -1.1581),
-    ]; // about 33 m apart
-    expect(clusterIncidents(points, zoom: 18), hasLength(2));
-    expect(clusterIncidents(points, zoom: 14), hasLength(1));
-  });
-
-  test('the same incidents are all accounted for', () {
+  test('every incident keeps its own dot', () {
     final list = [
-      for (var i = 0; i < 20; i++) _at(i, 52.95 + i * 0.00002, -1.15),
+      for (var i = 0; i < 12; i++) _at(i, 52.95 + (i % 3) * 0.00001, -1.15),
     ];
-    final clusters = clusterIncidents(list, zoom: 16);
-    expect(clusters.fold<int>(0, (sum, c) => sum + c.count), 20);
+    final placed = spreadOverlapping(list, zoom: 16);
+    expect(placed, hasLength(12));
+    expect({for (final p in placed) p.incident.id}, hasLength(12));
+  });
+
+  test('a lone incident is drawn exactly where it is', () {
+    final placed = spreadOverlapping([_at(1, 52.9548, -1.1581)], zoom: 16);
+    expect(placed.single.position, const LatLng(52.9548, -1.1581));
+  });
+
+  test('stacked incidents are fanned out so each dot has its own spot', () {
+    final stacked = [
+      _at(1, 52.9548, -1.1581),
+      _at(2, 52.9548, -1.1581),
+      _at(3, 52.9548, -1.1581),
+    ];
+    final placed = spreadOverlapping(stacked, zoom: 17);
+    final positions = {
+      for (final p in placed)
+        '${p.position.latitude.toStringAsFixed(7)},${p.position.longitude.toStringAsFixed(7)}',
+    };
+    expect(positions, hasLength(3));
+  });
+
+  test('fanned dots stay close to the original spot', () {
+    const origin = LatLng(52.9548, -1.1581);
+    final placed = spreadOverlapping([
+      for (var i = 0; i < 5; i++) _at(i, origin.latitude, origin.longitude),
+    ], zoom: 17);
+    for (final p in placed) {
+      final pixels =
+          haversineMeters(origin, p.position) /
+          metersPerPixel(origin.latitude, 17);
+      expect(pixels, lessThanOrEqualTo(27));
+    }
+  });
+
+  test('dots that are far apart are not moved', () {
+    final far = [_at(1, 52.9548, -1.1581), _at(2, 52.9648, -1.1581)];
+    final placed = spreadOverlapping(far, zoom: 16);
+    expect(placed[0].position, const LatLng(52.9548, -1.1581));
+    expect(placed[1].position, const LatLng(52.9648, -1.1581));
   });
 
   test('incidentsInBounds counts only what is on screen', () {

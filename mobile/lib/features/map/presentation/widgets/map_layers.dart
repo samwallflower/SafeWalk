@@ -31,43 +31,36 @@ class HeatDotsLayer extends StatelessWidget {
   }
 }
 
-/// Tappable incidents at street level. Incidents that overlap show as one dot with a number.
+/// Tappable incidents at street level: one dot each. Dots that would overlap are fanned out a little.
 class IncidentMarkersLayer extends StatelessWidget {
   const IncidentMarkersLayer({
     super.key,
-    required this.clusters,
-    required this.selectedIds,
+    required this.placed,
+    required this.selectedId,
     required this.onTap,
   });
 
-  final List<IncidentCluster> clusters;
-  final Set<int> selectedIds;
-  final void Function(IncidentCluster cluster) onTap;
+  final List<PlacedIncident> placed;
+  final int? selectedId;
+  final void Function(Incident incident) onTap;
 
   @override
   Widget build(BuildContext context) {
     return MarkerLayer(
       markers: [
-        for (final cluster in clusters)
+        for (final item in placed)
           Marker(
-            point: cluster.center,
-            width: 48,
-            height: 48,
+            point: item.position,
+            width: 44,
+            height: 44,
             child: Semantics(
               button: true,
-              label: cluster.count == 1
-                  ? '${cluster.incidents.first.category.name} incident'
-                  : '${cluster.count} incidents',
+              label: '${item.incident.category.name} incident',
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => onTap(cluster),
+                onTap: () => onTap(item.incident),
                 child: Center(
-                  child: _Dot(
-                    selected: cluster.incidents.any(
-                      (i) => selectedIds.contains(i.id),
-                    ),
-                    count: cluster.count,
-                  ),
+                  child: _Dot(selected: item.incident.id == selectedId),
                 ),
               ),
             ),
@@ -78,15 +71,14 @@ class IncidentMarkersLayer extends StatelessWidget {
 }
 
 class _Dot extends StatelessWidget {
-  const _Dot({required this.selected, required this.count});
+  const _Dot({required this.selected});
 
   final bool selected;
-  final int count;
 
   @override
   Widget build(BuildContext context) {
     final size = selected ? 22.0 : 14.0;
-    final dot = Container(
+    return Container(
       width: size + 12,
       height: size + 12,
       alignment: Alignment.center,
@@ -103,36 +95,6 @@ class _Dot extends StatelessWidget {
           border: Border.all(color: Colors.white, width: selected ? 3 : 2),
         ),
       ),
-    );
-    if (count < 2) return dot;
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.center,
-      children: [
-        dot,
-        Positioned(
-          top: -2,
-          right: -4,
-          child: Container(
-            constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.foreground,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white, width: 1.5),
-            ),
-            child: Text(
-              '$count',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

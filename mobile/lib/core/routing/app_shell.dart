@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../features/walk_session/presentation/state/walk_controller.dart';
 
 class _Tab {
   const _Tab(this.label, this.icon, this.selectedIcon);
@@ -17,13 +20,19 @@ const _tabs = [
 ];
 
 /// The bottom navigation shared by the signed-in screens. Each tab keeps its state when you switch away.
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // An unfinished walk found at launch needs a decision, so bring the Walk tab forward.
+    ref.listen(walkProvider.select((s) => s.phase), (previous, next) {
+      if (next == WalkPhase.pending && shell.currentIndex != 1) {
+        shell.goBranch(1);
+      }
+    });
     return Scaffold(
       body: shell,
       bottomNavigationBar: NavigationBar(
