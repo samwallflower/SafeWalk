@@ -78,6 +78,9 @@ class _FakeNotifier implements AlertNotifier {
   Future<bool> requestPermission() async => true;
 
   @override
+  Future<bool> areEnabled() async => true;
+
+  @override
   Future<void> show({
     required int id,
     required String title,

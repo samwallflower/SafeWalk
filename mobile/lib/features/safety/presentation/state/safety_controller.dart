@@ -79,7 +79,10 @@ class SafetyController extends Notifier<SafetyState> {
         (s) => s.phase == WalkPhase.active ? s.session?.id : null,
       ),
       (previous, next) {
-        Future.microtask(() => next == null ? _end() : _begin(next));
+        Future.microtask(() {
+          if (!ref.mounted) return;
+          next == null ? _end() : _begin(next);
+        });
       },
       fireImmediately: true,
     );

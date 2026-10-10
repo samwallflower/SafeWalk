@@ -33,7 +33,10 @@ class _PendingWalkScreenState extends ConsumerState<PendingWalkScreen> {
     final controller = ref.read(walkProvider.notifier);
     final session = walk.session;
     final theme = Theme.of(context);
-    final canResume = session?.status == SessionStatus.active;
+    final isEmergency = session?.status == SessionStatus.emergency;
+    final canResume =
+        session?.status == SessionStatus.active ||
+        session?.status == SessionStatus.emergency;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Walk')),
@@ -53,7 +56,9 @@ class _PendingWalkScreenState extends ConsumerState<PendingWalkScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    canResume
+                    isEmergency
+                        ? 'Your walk is in an emergency'
+                        : canResume
                         ? 'You have a walk in progress'
                         : 'An earlier walk was not finished',
                     textAlign: TextAlign.center,
@@ -63,7 +68,9 @@ class _PendingWalkScreenState extends ConsumerState<PendingWalkScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    canResume
+                    isEmergency
+                        ? 'Resume to see the alert, call for help, or mark yourself safe. You can also end the walk.'
+                        : canResume
                         ? 'It started ${formatRelative(session?.startTime ?? '')}. Resume to keep sharing your location, or end it if you are done.'
                         : 'End it to plan a new walk.',
                     textAlign: TextAlign.center,

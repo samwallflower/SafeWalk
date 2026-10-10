@@ -13,6 +13,9 @@ abstract class AlertNotifier {
     required String title,
     required String body,
   });
+
+  /// False when the user (or the system) has switched this app's notifications off.
+  Future<bool> areEnabled();
 }
 
 class LocalAlertNotifier implements AlertNotifier {
@@ -54,11 +57,34 @@ class LocalAlertNotifier implements AlertNotifier {
   }
 
   @override
+  Future<bool> areEnabled() async {
+    try {
+      await _init();
+      final enabled = await _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.areNotificationsEnabled();
+      return enabled ?? true;
+    } on Object {
+      return true;
+    }
+  }
+
+  @override
   Future<void> show({
     required int id,
     required String title,
     required String body,
   }) async {
+    try {
+      await _show(id, title, body);
+    } on Object catch (error) {
+      debugPrint('Could not show notification: $error');
+    }
+  }
+
+  Future<void> _show(int id, String title, String body) async {
     await _init();
     await _plugin.show(
       id: id,
@@ -91,4 +117,9 @@ final appInForegroundProvider = Provider<bool Function()>(
     final state = WidgetsBinding.instance.lifecycleState;
     return state == null || state == AppLifecycleState.resumed;
   },
+);
+
+/// Whether this app may show notifications right now. Checked when the walk screen opens and when the app returns.
+final notificationsEnabledProvider = FutureProvider.autoDispose<bool>(
+  (ref) => ref.watch(alertNotifierProvider).areEnabled(),
 );

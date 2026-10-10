@@ -123,7 +123,10 @@ class WalkController extends Notifier<WalkState> {
     ref.onDispose(_stopTracking);
     // Look for an unfinished walk whenever someone signs in; forget everything when they sign out.
     ref.listen(sessionProvider.select((s) => s.value?.id), (previous, next) {
-      Future.microtask(() => next == null ? _signedOut() : restore());
+      Future.microtask(() {
+        if (!ref.mounted) return;
+        next == null ? _signedOut() : restore();
+      });
     }, fireImmediately: true);
     return const WalkState();
   }
@@ -168,7 +171,12 @@ class WalkController extends Notifier<WalkState> {
     final session = state.session;
     if (session == null || state.phase != WalkPhase.pending) return;
     final route = await _loadRoute(session.routeId);
-    state = WalkState(phase: WalkPhase.active, session: session, route: route);
+    state = WalkState(
+      phase: WalkPhase.active,
+      session: session,
+      route: route,
+      emergencyActive: session.status == SessionStatus.emergency,
+    );
     _startTracking();
   }
 

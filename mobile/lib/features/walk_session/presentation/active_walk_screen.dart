@@ -14,6 +14,15 @@ import '../../../core/widgets/inline_notice.dart';
 import '../../map/domain/map_config.dart';
 import '../../map/presentation/widgets/map_layers.dart';
 import '../../routing/presentation/widgets/route_map_layers.dart';
+import '../../../core/location/location_provider.dart';
+import '../../../core/notifications/alert_notifier.dart';
+import '../../../core/widgets/notifications_off_banner.dart';
+import '../../emergency/data/authority_cache.dart';
+import '../../emergency/data/best_emergency_number.dart';
+import '../../emergency/data/dialer.dart';
+import '../../emergency/presentation/state/emergency_controller.dart';
+import '../../emergency/presentation/widgets/emergency_overlay.dart';
+import '../../emergency/presentation/widgets/sos_button.dart';
 import '../../safety/presentation/state/safety_controller.dart';
 import '../../safety/presentation/widgets/idle_prompt_overlay.dart';
 import '../../safety/presentation/widgets/off_route_banner.dart';
@@ -34,12 +43,20 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
   Timer? _clock;
   bool _follow = true;
   bool _ending = false;
+  late final AppLifecycleListener _lifecycle;
 
   @override
   void initState() {
     super.initState();
     // Keep the screen on while the walk screen is showing.
     WakelockPlus.enable();
+    // Coming back to the app: re-check notifications and ask the server how the walk is doing, right away.
+    _lifecycle = AppLifecycleListener(
+      onResume: () {
+        ref.invalidate(notificationsEnabledProvider);
+        ref.read(walkProvider.notifier).refreshSession();
+      },
+    );
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -48,6 +65,7 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
   @override
   void dispose() {
     _clock?.cancel();
+    _lifecycle.dispose();
     WakelockPlus.disable();
     super.dispose();
   }
@@ -86,6 +104,72 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
     }
   }
 
+  Future<void> _sendSos() async {
+    final ok = await ref.read(emergencyProvider.notifier).triggerSos();
+    if (ok || !mounted) return;
+    final error =
+        ref.read(emergencyProvider).error ?? "The alert couldn't be sent.";
+    ref.read(emergencyProvider.notifier).clearError();
+    final number = await bestEmergencyNumber(ref.read(authorityCacheProvider));
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(
+          Icons.error_outline,
+          color: Color(0xFFC4161C),
+          size: 36,
+        ),
+        title: const Text('SOS was not sent'),
+        content: Text('$error\n\nIf you are in danger, call for help now.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _sendSos();
+            },
+            child: const Text('Try again'),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.call),
+            onPressed: () => ref.read(dialerProvider).dial(number),
+            label: Text('Call $number'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmSos() async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Send an SOS?'),
+        content: const Text(
+          'Your emergency contacts will be alerted with your location.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFC4161C),
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Send SOS'),
+          ),
+        ],
+      ),
+    );
+    if (yes == true) await _sendSos();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (Env.mapboxToken.isEmpty) {
@@ -97,6 +181,9 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
     }
     final walk = ref.watch(walkProvider);
     final safety = ref.watch(safetyProvider);
+    final emergency = ref.watch(emergencyProvider);
+    final notificationsOn =
+        ref.watch(notificationsEnabledProvider).value ?? true;
     final theme = Theme.of(context);
     final route = walk.route;
     final position = walk.position;
@@ -212,6 +299,13 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
                       ),
                     ),
                   ),
+                  if (!notificationsOn) ...[
+                    const SizedBox(height: 8),
+                    NotificationsOffBanner(
+                      onOpenSettings: () =>
+                          ref.read(locationServiceProvider).openSettings(),
+                    ),
+                  ],
                   if (safety.connectionLost) ...[
                     const SizedBox(height: 8),
                     const InlineNotice('Connection lost. Reconnecting...'),
@@ -230,12 +324,6 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
                       "Can't reach SafeWalk. Still trying to share your location.",
                     ),
                   ],
-                  if (walk.emergencyActive) ...[
-                    const SizedBox(height: 8),
-                    const InlineNotice(
-                      'An emergency alert was raised for this walk.',
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -243,7 +331,7 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
           if (!_follow && position != null)
             Positioned(
               right: 12,
-              bottom: 120,
+              bottom: 180,
               child: FloatingActionButton.small(
                 heroTag: 'recenter',
                 tooltip: 'Follow my position',
@@ -260,25 +348,35 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
             left: 12,
             right: 12,
             bottom: 12,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: theme.colorScheme.error,
-              ),
-              onPressed: _ending ? null : _confirmEnd,
-              icon: _ending
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.stop_circle_outlined),
-              label: Text(_ending ? 'Ending...' : 'End walk'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SosButton(
+                  busy: emergency.triggering,
+                  onTriggered: _sendSos,
+                  onConfirmRequested: _confirmSos,
+                ),
+                const SizedBox(height: 10),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: theme.colorScheme.surface,
+                    foregroundColor: theme.colorScheme.error,
+                  ),
+                  onPressed: _ending ? null : _confirmEnd,
+                  icon: _ending
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        )
+                      : const Icon(Icons.stop_circle_outlined),
+                  label: Text(_ending ? 'Ending...' : 'End walk'),
+                ),
+              ],
             ),
           ),
-          if (safety.idlePrompt != null)
+          if (safety.idlePrompt != null && !walk.emergencyActive)
             Positioned.fill(
               child: IdlePromptOverlay(
                 prompt: safety.idlePrompt!,
@@ -288,6 +386,8 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
                 },
               ),
             ),
+          if (walk.emergencyActive)
+            const Positioned.fill(child: EmergencyOverlay()),
         ],
       ),
     );

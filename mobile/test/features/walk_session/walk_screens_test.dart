@@ -79,11 +79,11 @@ void main() {
     expect(walk.ended, 1);
   });
 
-  testWidgets('a stuck emergency walk can only be ended', (tester) async {
+  testWidgets('an abandoned walk can only be ended', (tester) async {
     final walk = _FixedWalk(
       WalkState(
         phase: WalkPhase.pending,
-        session: _session(SessionStatus.emergency),
+        session: _session(SessionStatus.abandoned),
       ),
     );
     await tester.pumpWidget(_app(walk, const PendingWalkScreen()));
@@ -119,4 +119,22 @@ void main() {
     await tester.pumpWidget(_app(walk, const WalkSummaryScreen()));
     expect(find.text('Walk ended'), findsOneWidget);
   });
+
+  testWidgets(
+    'a walk in an emergency can be resumed, to see the alert and call for help',
+    (tester) async {
+      final walk = _FixedWalk(
+        WalkState(
+          phase: WalkPhase.pending,
+          session: _session(SessionStatus.emergency),
+        ),
+      );
+      await tester.pumpWidget(_app(walk, const PendingWalkScreen()));
+
+      expect(find.text('Your walk is in an emergency'), findsOneWidget);
+      await tester.tap(find.text('Resume walk'));
+      await tester.pump();
+      expect(walk.resumed, 1);
+    },
+  );
 }

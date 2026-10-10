@@ -72,6 +72,12 @@ class ApiClient {
     return data as Json;
   }
 
+  /// A POST that may legitimately answer with no `data` (null instead of an object).
+  Future<Json?> postObjectOrNull(String path, {Object? body}) async {
+    final data = await _send('POST', path, body: body);
+    return data as Json?;
+  }
+
   Future<List<Json>> postList(String path, {Object? body}) async {
     final data = await _send('POST', path, body: body);
     return (data as List<Object?>).cast<Json>();
