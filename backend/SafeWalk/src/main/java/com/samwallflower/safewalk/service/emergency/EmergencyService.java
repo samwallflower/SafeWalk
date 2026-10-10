@@ -158,6 +158,7 @@ public class EmergencyService implements IEmergencyService{
 
 
         session.setLastLocationUpdate(LocalDateTime.now());
+        session.setLastMovementDetectedAt(LocalDateTime.now());
         walkSessionRepository.save(session);
 
         emergency.setResolved(true);

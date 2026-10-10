@@ -12,6 +12,9 @@ public interface IWalkSessionService {
     WalkSessionDto updateLocation(Long id, Long userId, UpdateWalkSession request);
     WalkSessionDto getWalkSessionDtoById(Long id);
     WalkSessionDto endSessionById(Long id);
+
+    WalkSessionDto resolveIdleWarning(Long id, Long userId);
+
     WalkSessionDto endSessionByIdAndUserId(Long id, Long userId);
     WalkSessionDto getWalkSessionByIdAndUserId(Long id, Long userId);
     List<WalkSessionDto> getWalkSessionsByUserId(Long userId);

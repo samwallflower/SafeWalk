@@ -49,6 +49,10 @@ public class WalkSession {
 
     private LocalDateTime lastArrivedAt;
 
+    private LocalDateTime lastMovementDetectedAt;
+    private Double lastMovedLatitude;
+    private Double lastMovedLongitude;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SessionStatus status; //ACTIVE, COMPLETED, EMERGENCY, ABANDONED

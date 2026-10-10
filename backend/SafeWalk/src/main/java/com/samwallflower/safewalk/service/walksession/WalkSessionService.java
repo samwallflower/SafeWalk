@@ -14,9 +14,11 @@ import com.samwallflower.safewalk.repository.WalkSessionRepository;
 import com.samwallflower.safewalk.request.walksession.AddWalkSessionRequest;
 import com.samwallflower.safewalk.request.walksession.UpdateWalkSession;
 import com.samwallflower.safewalk.security.util.SecurityUtils;
+import com.samwallflower.safewalk.util.GeoUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +32,9 @@ public class WalkSessionService implements IWalkSessionService {
     private final ModelMapper modelMapper;
     private final RouteRepository routeRepository;
     private final UserRepository userRepository;
+
+    @Value("${app.anomaly.movement-detection-threshold-meters}")
+    private double movementDetectionThresholdMeters;
 
     // basically we get the user and the route from their respective repository
     // then we instantiate a walk session object and set relevant fields
@@ -79,6 +84,9 @@ public class WalkSessionService implements IWalkSessionService {
         walkSession.setLastKnownLatitude(request.getOriginLatitude());
         walkSession.setLastKnownLongitude(request.getOriginLongitude());
         walkSession.setLastLocationUpdate(LocalDateTime.now());
+        walkSession.setLastMovementDetectedAt(LocalDateTime.now());
+        walkSession.setLastMovedLatitude(request.getOriginLatitude());
+        walkSession.setLastMovedLongitude(request.getOriginLongitude());
 
         return walkSession;
     }
@@ -97,9 +105,23 @@ public class WalkSessionService implements IWalkSessionService {
         if(!walkSession.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("Walk Session with id: "+ id + "does not belong to user with id: "+ userId);
         }
+
+        LocalDateTime now = LocalDateTime.now();
+        Double anchorLatitude = walkSession.getLastMovedLatitude();
+        Double anchorLongitude = walkSession.getLastMovedLongitude();
+        boolean moved = anchorLatitude == null || anchorLongitude == null ||
+                GeoUtils.haversineMeters(anchorLatitude,anchorLongitude, request.getLatitude(), request.getLongitude()) > movementDetectionThresholdMeters;
+
+        if(moved){
+            walkSession.setLastMovedLatitude(request.getLatitude());
+            walkSession.setLastMovedLongitude(request.getLongitude());
+            walkSession.setLastMovementDetectedAt(now);
+            walkSession.setAlarmTriggered(false);
+        }
+
         walkSession.setLastKnownLatitude(request.getLatitude());
         walkSession.setLastKnownLongitude(request.getLongitude());
-        walkSession.setLastLocationUpdate(LocalDateTime.now());
+        walkSession.setLastLocationUpdate(now);
         WalkSession saved = walkSessionRepository.save(walkSession);
         return convertToDto(saved);
     }
@@ -120,6 +142,19 @@ public class WalkSessionService implements IWalkSessionService {
                     WalkSession saved = walkSessionRepository.save(endSession(walkSession));
                     return convertToDto(saved);
                 }).orElseThrow(()-> new ResourceNotFoundException("WalkSession not found with id"+ id));
+    }
+
+    @Override
+    public WalkSessionDto resolveIdleWarning(Long id, Long userId){
+        SecurityUtils.checkOwnershipOrAdmin(userId);
+        WalkSession session = walkSessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("WalkSession not found with id: " + id));
+        if (!session.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("WalkSession with id: " + id + " does not belong to the user with id: " + userId);
+        }
+        session.setLastMovementDetectedAt(LocalDateTime.now());
+        session.setAlarmTriggered(false);
+        return convertToDto(walkSessionRepository.save(session));
     }
 
     private WalkSession endSession(WalkSession walkSession) {

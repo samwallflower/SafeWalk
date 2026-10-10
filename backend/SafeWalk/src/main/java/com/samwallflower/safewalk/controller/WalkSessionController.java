@@ -132,4 +132,11 @@ public class WalkSessionController {
         return ResponseEntity.ok(new ApiResponse("WalkSessions found successfully", sessions));
     }
 
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @PutMapping("/{id}/user/{userId}/resolve-idle-warning/session")
+    public ResponseEntity<ApiResponse> resolveIdleWarning(@PathVariable Long id, @PathVariable Long userId) {
+        WalkSessionDto walkSessionDto = walkSessionService.resolveIdleWarning(id, userId);
+        return ResponseEntity.ok(new ApiResponse("WalkSession idle warning resolved successfully", walkSessionDto));
+    }
+
 }

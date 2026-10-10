@@ -150,6 +150,9 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
      * - Action: Push `IDLE_WARNING` to user's WebSocket channel; set `alarmTriggered = true`
      * - Grace period: 45 seconds — user must tap "I'm OK" button in UI to reset
      * - If unacknowledged: Trigger `EmergencyProtocol`
+     * Bug : so here we are only checking update location time but not comparing the last location to current location
+     * to check if the position of the user has changed or not
+     * how to implement it ?
      * @param session
      */
     @Override
@@ -175,6 +178,24 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
                     emergencyService.triggerEmergencySystem(session.getId(), EmergencyTriggerSource.IDLE_TIMEOUT);
                 }
             }
+        }
+        LocalDateTime lastMovedAt = session.getLastMovementDetectedAt() != null ? session.getLastMovementDetectedAt() : session.getLastLocationUpdate();
+        if(lastMovedAt==null) return;
+        long secondsStationary = SECONDS.between(lastMovedAt, LocalDateTime.now());
+        if(secondsStationary <= idleThresholdSeconds)
+            return;
+        if(!session.getAlarmTriggered()){
+            session.setAlarmTriggered(true);
+            walkSessionRepository.save(session);
+            notificationService.pushIdleWarning(session.getId());
+            log.info("Idle warning triggered for session {}", session.getId());
+            return;
+        }
+        // warning sent still not moving
+        long secondsSinceThreshold = secondsStationary - idleThresholdSeconds;
+        if(secondsSinceThreshold > alarmGracePeriodSeconds) {
+            log.warn("Session {} unresponsive past grace period - triggering emergency", session.getId());
+            emergencyService.triggerEmergencySystem(session.getId(), EmergencyTriggerSource.IDLE_TIMEOUT);
         }
 
     }
