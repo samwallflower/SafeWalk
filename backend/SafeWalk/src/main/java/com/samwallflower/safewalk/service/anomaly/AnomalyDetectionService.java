@@ -141,50 +141,14 @@ public class AnomalyDetectionService implements IAnomalyDetectionService {
         notificationService.pushAutoCompleteAlert(session.getId());
     }
 
-    /***
-     *EC-2: Stationary Emergency (User is attacked but still on route)
-     * Trigger: GPS static for ≥3 minutes without user pausing the session
-     * Solution:
-     * - AnomalyDetectionService compares `lastLocationUpdate` to now
-     * - Threshold: `NOW - lastLocationUpdate > 3 min AND alarmTriggered = false`
-     * - Action: Push `IDLE_WARNING` to user's WebSocket channel; set `alarmTriggered = true`
-     * - Grace period: 45 seconds — user must tap "I'm OK" button in UI to reset
-     * - If unacknowledged: Trigger `EmergencyProtocol`
-     * Bug : so here we are only checking update location time but not comparing the last location to current location
-     * to check if the position of the user has changed or not
-     * how to implement it ?
-     * @param session
-     */
     @Override
     public void checkIdleTimeout(WalkSession session) {
-        if(session.getLastLocationUpdate()==null) return;
-        long secondsSinceUpdate = SECONDS.between(session.getLastLocationUpdate(), LocalDateTime.now());
-
-        if(secondsSinceUpdate > idleThresholdSeconds){
-            if(!session.getAlarmTriggered()){
-                session.setAlarmTriggered(true);
-                walkSessionRepository.save(session);
-                notificationService.pushIdleWarning(session.getId());
-                log.info("Idle warning triggered for session {}", session.getId());
-
-            }else{
-                // so alarm is already triggered
-                // and still no update
-                // we check seconds since last update against idle threshold and
-                // start emergency protocol if it exceeds alarm grace period
-                long secondsSinceThreshold = secondsSinceUpdate - idleThresholdSeconds;
-                if (secondsSinceThreshold > alarmGracePeriodSeconds) {
-                    log.warn("Session {} unresponsive past grace period - triggering emergency", session.getId());
-                    emergencyService.triggerEmergencySystem(session.getId(), EmergencyTriggerSource.IDLE_TIMEOUT);
-                }
-            }
-        }
         LocalDateTime lastMovedAt = session.getLastMovementDetectedAt() != null ? session.getLastMovementDetectedAt() : session.getLastLocationUpdate();
         if(lastMovedAt==null) return;
         long secondsStationary = SECONDS.between(lastMovedAt, LocalDateTime.now());
         if(secondsStationary <= idleThresholdSeconds)
             return;
-        if(!session.getAlarmTriggered()){
+        if(!Boolean.TRUE.equals(session.getAlarmTriggered())) {
             session.setAlarmTriggered(true);
             walkSessionRepository.save(session);
             notificationService.pushIdleWarning(session.getId());

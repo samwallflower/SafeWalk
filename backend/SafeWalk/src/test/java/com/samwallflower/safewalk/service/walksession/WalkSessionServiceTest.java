@@ -17,9 +17,11 @@ import com.samwallflower.safewalk.request.walksession.UpdateWalkSession;
 import com.samwallflower.safewalk.support.AsAdmin;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
@@ -258,6 +260,123 @@ class WalkSessionServiceTest {
 
         assertThat(result.getLastKnownLatitude()).isEqualTo(47.51);
         assertThat(result.getLastKnownLongitude()).isEqualTo(21.63);
+    }
+
+    // ---------- updateLocation: movement detection (anchor + threshold) ----------
+
+    private WalkSession sessionWithAnchor(User user, double anchorLat, double anchorLng, LocalDateTime movedAt) {
+        WalkSession session = buildSession(5L, user, buildRoute(10L), SessionStatus.ACTIVE);
+        session.setLastMovedLatitude(anchorLat);
+        session.setLastMovedLongitude(anchorLng);
+        session.setLastMovementDetectedAt(movedAt);
+        session.setAlarmTriggered(true);
+        return session;
+    }
+
+    private UpdateWalkSession locationRequest(double lat, double lng) {
+        UpdateWalkSession request = new UpdateWalkSession();
+        request.setLatitude(lat);
+        request.setLongitude(lng);
+        return request;
+    }
+
+    @Test
+    void updateLocation_registersMovement_whenFartherThanThresholdFromAnchor() {
+        ReflectionTestUtils.setField(service, "movementDetectionThresholdMeters", 15.0);
+        User user = buildUser(1L);
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        WalkSession session = sessionWithAnchor(user, 47.5000, 21.6000, fiveMinutesAgo);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(walkSessionRepository.findById(5L)).thenReturn(Optional.of(session));
+        when(walkSessionRepository.save(any(WalkSession.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.updateLocation(5L, 1L, locationRequest(47.5009, 21.6000)); // roughly 100 m north
+
+        assertThat(session.getLastMovementDetectedAt()).isAfter(fiveMinutesAgo);
+        assertThat(session.getLastMovedLatitude()).isEqualTo(47.5009);
+        assertThat(session.getLastMovedLongitude()).isEqualTo(21.6000);
+        assertThat(session.getAlarmTriggered()).isFalse();   // moving again clears the idle warning
+    }
+
+    @Test
+    void updateLocation_ignoresGpsJitter_whenWithinThresholdOfAnchor() {
+        ReflectionTestUtils.setField(service, "movementDetectionThresholdMeters", 15.0);
+        User user = buildUser(1L);
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        WalkSession session = sessionWithAnchor(user, 47.5000, 21.6000, fiveMinutesAgo);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(walkSessionRepository.findById(5L)).thenReturn(Optional.of(session));
+        when(walkSessionRepository.save(any(WalkSession.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.updateLocation(5L, 1L, locationRequest(47.50003, 21.6000)); // roughly 3 m: jitter, not a step
+
+        assertThat(session.getLastMovementDetectedAt()).isEqualTo(fiveMinutesAgo);   // clock not reset
+        assertThat(session.getLastMovedLatitude()).isEqualTo(47.5000);               // anchor not moved
+        assertThat(session.getAlarmTriggered()).isTrue();                            // still idle
+        // ...but the latest position and update time are still recorded
+        assertThat(session.getLastKnownLatitude()).isEqualTo(47.50003);
+        assertThat(session.getLastLocationUpdate()).isNotNull();
+    }
+
+    @Test
+    void updateLocation_comparesAgainstTheAnchor_notAgainstThePreviousUpdate() {
+        // many tiny steps that each stay under the threshold must not keep resetting the idle clock,
+        // and once the total distance from the anchor passes the threshold it counts as movement
+        ReflectionTestUtils.setField(service, "movementDetectionThresholdMeters", 15.0);
+        User user = buildUser(1L);
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        WalkSession session = sessionWithAnchor(user, 47.5000, 21.6000, fiveMinutesAgo);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(walkSessionRepository.findById(5L)).thenReturn(Optional.of(session));
+        when(walkSessionRepository.save(any(WalkSession.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.updateLocation(5L, 1L, locationRequest(47.50005, 21.6000));  // ~5.5 m from anchor
+        service.updateLocation(5L, 1L, locationRequest(47.50010, 21.6000));  // ~11 m from anchor (5.5 m from previous)
+        assertThat(session.getLastMovementDetectedAt()).isEqualTo(fiveMinutesAgo);
+
+        service.updateLocation(5L, 1L, locationRequest(47.50020, 21.6000));  // ~22 m from anchor
+        assertThat(session.getLastMovementDetectedAt()).isAfter(fiveMinutesAgo);
+    }
+
+    @Test
+    void updateLocation_treatsTheFirstUpdateAsMovement_whenThereIsNoAnchorYet() {
+        ReflectionTestUtils.setField(service, "movementDetectionThresholdMeters", 15.0);
+        User user = buildUser(1L);
+        WalkSession session = buildSession(5L, user, buildRoute(10L), SessionStatus.ACTIVE);
+        session.setLastMovedLatitude(null);
+        session.setLastMovedLongitude(null);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(walkSessionRepository.findById(5L)).thenReturn(Optional.of(session));
+        when(walkSessionRepository.save(any(WalkSession.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.updateLocation(5L, 1L, locationRequest(47.51, 21.63));
+
+        assertThat(session.getLastMovedLatitude()).isEqualTo(47.51);
+        assertThat(session.getLastMovedLongitude()).isEqualTo(21.63);
+        assertThat(session.getLastMovementDetectedAt()).isNotNull();
+    }
+
+    @Test
+    void startWalkSession_initialisesTheMovementAnchorAtTheOrigin() {
+        User user = buildUser(1L);
+        Route route = buildRoute(10L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(routeRepository.findById(10L)).thenReturn(Optional.of(route));
+        when(walkSessionRepository.findTopByUserIdOrderByStartTimeDesc(1L)).thenReturn(Optional.empty());
+        when(walkSessionRepository.save(any(WalkSession.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.startWalkSessionDto(1L, buildAddRequest(10L));
+
+        ArgumentCaptor<WalkSession> saved = ArgumentCaptor.forClass(WalkSession.class);
+        verify(walkSessionRepository).save(saved.capture());
+        assertThat(saved.getValue().getLastMovedLatitude()).isEqualTo(47.4979);
+        assertThat(saved.getValue().getLastMovedLongitude()).isEqualTo(21.6244);
+        assertThat(saved.getValue().getLastMovementDetectedAt()).isNotNull();
     }
 
     // ---------- endSessionById (admin) ----------

@@ -268,6 +268,25 @@ class EmergencyServiceTest {
     }
 
     @Test
+    void resolveEmergency_idleTimeout_restartsTheIdleClock() {
+        // after "I'm safe" the user may still be standing still: the idle clock must restart,
+        // otherwise the next scheduler tick would flag them again immediately
+        User user = buildUser(1L, List.of());
+        WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
+        session.setAlarmTriggered(true);
+        LocalDateTime tenMinutesAgo = LocalDateTime.now().minusMinutes(10);
+        session.setLastMovementDetectedAt(tenMinutesAgo);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.IDLE_TIMEOUT, false);
+
+        when(walkSessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
+
+        service.resolveEmergency(5L, 10L, 1L);
+
+        assertThat(session.getLastMovementDetectedAt()).isAfter(tenMinutesAgo);
+    }
+
+    @Test
     void resolveEmergency_routeDeviation_resetsDeviationState() {
         User user = buildUser(1L, List.of());
         WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
@@ -393,6 +412,22 @@ class EmergencyServiceTest {
         assertThat(session.getStatus()).isEqualTo(SessionStatus.ACTIVE);
         assertThat(session.getAlarmTriggered()).isFalse();
         verify(emergencyRepository).deleteById(5L);
+    }
+
+    @Test
+    void deleteEmergencyById_idleTimeout_restartsTheIdleClock() {
+        User user = buildUser(1L, List.of());
+        WalkSession session = buildSession(10L, user, SessionStatus.EMERGENCY);
+        session.setAlarmTriggered(true);
+        LocalDateTime tenMinutesAgo = LocalDateTime.now().minusMinutes(10);
+        session.setLastMovementDetectedAt(tenMinutesAgo);
+        Emergency emergency = buildEmergency(5L, session, EmergencyTriggerSource.IDLE_TIMEOUT, false);
+
+        when(emergencyRepository.findById(5L)).thenReturn(Optional.of(emergency));
+
+        service.deleteEmergencyById(5L);
+
+        assertThat(session.getLastMovementDetectedAt()).isAfter(tenMinutesAgo);
     }
 
     @Test
