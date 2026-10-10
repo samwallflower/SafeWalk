@@ -19,10 +19,14 @@ class AppLogo extends StatelessWidget {
           child: Icon(Icons.shield_outlined, color: scheme.onPrimary, size: 22),
         ),
         const SizedBox(width: 10),
-        Text(
-          'SafeWalk',
-          style: Theme.of(context).textTheme.titleLarge
-              ?.copyWith(fontWeight: FontWeight.w800),
+        Flexible(
+          child: Text(
+            'SafeWalk',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
         ),
       ],
     );

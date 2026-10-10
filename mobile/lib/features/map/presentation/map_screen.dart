@@ -42,6 +42,25 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   bool _locating = false;
   double _zoom = defaultMapZoom;
 
+  @override
+  void initState() {
+    super.initState();
+    _centerOnMe();
+  }
+
+  /// Opens the map where you are. If location is off or refused, it stays on the default view without a message.
+  Future<void> _centerOnMe() async {
+    final result = await const LocationService().current();
+    final point = result.point;
+    if (!mounted || point == null) return;
+    setState(() => _me = point);
+    try {
+      _map.move(point, 15);
+    } on Object {
+      // the map was not on screen yet; the next tap on the locate button does the same
+    }
+  }
+
   void _reportCamera(MapCamera camera) {
     final b = camera.visibleBounds;
     _zoom = camera.zoom;

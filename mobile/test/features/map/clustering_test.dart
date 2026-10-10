@@ -49,16 +49,21 @@ void main() {
     expect(positions, hasLength(3));
   });
 
-  test('fanned dots stay close to the original spot', () {
+  test('spread dots stay close to the original spot', () {
     const origin = LatLng(52.9548, -1.1581);
     final placed = spreadOverlapping([
       for (var i = 0; i < 5; i++) _at(i, origin.latitude, origin.longitude),
     ], zoom: 17);
+    expect(
+      placed.map((p) => p.position).toSet(),
+      hasLength(5),
+      reason: 'every dot has its own spot',
+    );
     for (final p in placed) {
       final pixels =
           haversineMeters(origin, p.position) /
           metersPerPixel(origin.latitude, 17);
-      expect(pixels, lessThanOrEqualTo(27));
+      expect(pixels, lessThanOrEqualTo(100));
     }
   });
 

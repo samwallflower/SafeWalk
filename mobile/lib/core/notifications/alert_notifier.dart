@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +14,11 @@ abstract class AlertNotifier {
     required int id,
     required String title,
     required String body,
+    bool alarm = false,
   });
+
+  /// Takes a notification away, which also silences an alarm that is still sounding.
+  Future<void> cancel(int id);
 
   /// False when the user (or the system) has switched this app's notifications off.
   Future<bool> areEnabled();
@@ -30,6 +36,17 @@ class LocalAlertNotifier implements AlertNotifier {
     importance: Importance.max,
   );
 
+  /// Rings like an alarm clock: on the alarm volume, so it is heard with the phone on silent.
+  static const _alarmChannel = AndroidNotificationChannel(
+    'safewalk_alarm',
+    'Safety alarm',
+    description:
+        'Rings loudly when you may be in danger: an emergency, or no movement.',
+    importance: Importance.max,
+    sound: UriAndroidNotificationSound('content://settings/system/alarm_alert'),
+    audioAttributesUsage: AudioAttributesUsage.alarm,
+  );
+
   Future<void> _init() async {
     if (_ready) return;
     await _plugin.initialize(
@@ -42,6 +59,11 @@ class LocalAlertNotifier implements AlertNotifier {
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.createNotificationChannel(_channel);
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(_alarmChannel);
     _ready = true;
   }
 
@@ -76,31 +98,53 @@ class LocalAlertNotifier implements AlertNotifier {
     required int id,
     required String title,
     required String body,
+    bool alarm = false,
   }) async {
     try {
-      await _show(id, title, body);
+      await _show(id, title, body, alarm);
     } on Object catch (error) {
       debugPrint('Could not show notification: $error');
     }
   }
 
-  Future<void> _show(int id, String title, String body) async {
+  @override
+  Future<void> cancel(int id) async {
+    try {
+      await _init();
+      await _plugin.cancel(id: id);
+    } on Object catch (error) {
+      debugPrint('Could not cancel notification: $error');
+    }
+  }
+
+  Future<void> _show(int id, String title, String body, bool alarm) async {
     await _init();
+    final channel = alarm ? _alarmChannel : _channel;
     await _plugin.show(
       id: id,
       title: title,
       body: body,
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          _channel.id,
-          _channel.name,
-          channelDescription: _channel.description,
+          channel.id,
+          channel.name,
+          channelDescription: channel.description,
           importance: Importance.max,
           priority: Priority.high,
           category: AndroidNotificationCategory.alarm,
           visibility: NotificationVisibility.public,
           enableVibration: true,
           playSound: true,
+          sound: alarm ? channel.sound : null,
+          audioAttributesUsage: alarm
+              ? AudioAttributesUsage.alarm
+              : AudioAttributesUsage.notification,
+          vibrationPattern: alarm
+              ? Int64List.fromList([0, 800, 400, 800, 400, 800])
+              : null,
+          // insistent: the sound repeats until the notification is opened or dismissed
+          additionalFlags: alarm ? Int32List.fromList([4]) : null,
+          fullScreenIntent: alarm,
         ),
       ),
     );

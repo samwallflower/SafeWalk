@@ -55,15 +55,26 @@ List<PlacedIncident> spreadOverlapping(
       result.add(PlacedIncident(group.first, center));
       continue;
     }
-    // Ring radius grows a little with the number of dots so they do not touch.
-    final ringPixels = math.min(26.0, 11.0 + group.length * 2.5);
-    final ringMeters = ringPixels * metersPerPixel(center.latitude, zoom);
-    final dLat = ringMeters / _metersPerDegreeLatitude;
-    final dLng =
-        ringMeters /
-        (_metersPerDegreeLatitude * math.cos(center.latitude * math.pi / 180));
-    for (var i = 0; i < group.length; i++) {
-      final angle = -math.pi / 2 + 2 * math.pi * i / group.length;
+    // A few dots fan out on a small ring; a crowd is scattered like seeds in a sunflower, which looks natural and
+    // keeps every dot apart. The cloud is capped in size, so a big crowd packs closer rather than taking over the map.
+    final n = group.length;
+    final spacing = n <= 3 ? 0.0 : math.min(14.0, 90 / math.sqrt(n));
+    for (var i = 0; i < n; i++) {
+      final double pixels;
+      final double angle;
+      if (n <= 3) {
+        pixels = math.min(26.0, 11.0 + n * 2.5);
+        angle = -math.pi / 2 + 2 * math.pi * i / n;
+      } else {
+        pixels = spacing * math.sqrt(i + 0.5);
+        angle = i * 2.399963229728653; // the golden angle
+      }
+      final meters = pixels * metersPerPixel(center.latitude, zoom);
+      final dLat = meters / _metersPerDegreeLatitude;
+      final dLng =
+          meters /
+          (_metersPerDegreeLatitude *
+              math.cos(center.latitude * math.pi / 180));
       result.add(
         PlacedIncident(
           group[i],

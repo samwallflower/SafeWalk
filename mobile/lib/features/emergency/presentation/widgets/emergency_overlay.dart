@@ -29,7 +29,7 @@ class EmergencyOverlay extends ConsumerWidget {
     final lng = emergency?.longitude ?? position?.longitude;
 
     return Material(
-      color: AppColors.destructiveSoft,
+      color: theme.scaffoldBackgroundColor,
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),

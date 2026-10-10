@@ -176,9 +176,11 @@ class SafetyController extends Notifier<SafetyState> {
           _emergencyNotificationId,
           'Emergency alert raised',
           'Your contacts are being alerted. Open SafeWalk.',
+          alarm: true,
         );
       case AlertType.emergencyResolved:
         walk.setEmergency(false);
+        _silence(_emergencyNotificationId);
       case AlertType.autocomplete:
         unawaited(walk.refreshSession());
       case AlertType.unknown:
@@ -194,6 +196,7 @@ class SafetyController extends Notifier<SafetyState> {
       _idleNotificationId,
       'Are you safe?',
       'No movement detected. Open SafeWalk and tap I\'m OK.',
+      alarm: true,
     );
   }
 
@@ -204,6 +207,7 @@ class SafetyController extends Notifier<SafetyState> {
       _showIdlePrompt();
     } else if (!latest.alarmTriggered && state.idlePrompt != null) {
       state = state.copyWith(idlePrompt: () => null);
+      _silence(_idleNotificationId);
     }
     if (latest.deviationTriggered != state.offRoute) {
       state = state.copyWith(offRoute: latest.deviationTriggered);
@@ -220,6 +224,7 @@ class SafetyController extends Notifier<SafetyState> {
           .read(walkSessionApiProvider)
           .resolveIdleWarning(sessionId, userId);
       state = state.copyWith(idlePrompt: () => null, error: () => null);
+      _silence(_idleNotificationId);
       return true;
     } on ApiException catch (e) {
       state = state.copyWith(error: () => e.message);
@@ -230,10 +235,16 @@ class SafetyController extends Notifier<SafetyState> {
   void dismissOffRoute() => state = state.copyWith(offRoute: false);
   void clearError() => state = state.copyWith(error: () => null);
 
-  void _notify(int id, String title, String body) {
+  void _notify(int id, String title, String body, {bool alarm = false}) {
     if (ref.read(appInForegroundProvider)()) return;
     unawaited(
-      ref.read(alertNotifierProvider).show(id: id, title: title, body: body),
+      ref
+          .read(alertNotifierProvider)
+          .show(id: id, title: title, body: body, alarm: alarm),
     );
   }
+
+  /// Stops an alarm that may still be ringing because the person dealt with it another way.
+  void _silence(int id) =>
+      unawaited(ref.read(alertNotifierProvider).cancel(id));
 }

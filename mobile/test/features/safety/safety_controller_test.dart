@@ -73,6 +73,7 @@ class _FakeStore extends SecureStore {
 
 class _FakeNotifier implements AlertNotifier {
   final shown = <String>[];
+  final alarms = <String>[];
 
   @override
   Future<bool> requestPermission() async => true;
@@ -85,7 +86,14 @@ class _FakeNotifier implements AlertNotifier {
     required int id,
     required String title,
     required String body,
-  }) async => shown.add(title);
+    bool alarm = false,
+  }) async {
+    shown.add(title);
+    if (alarm) alarms.add(title);
+  }
+
+  @override
+  Future<void> cancel(int id) async {}
 }
 
 class _FakeWalkApi implements WalkSessionApi {
@@ -276,6 +284,13 @@ void main() {
     expect(background.notifier.shown, [
       'Are you safe?',
       "You're off your route",
+    ]);
+    // only the dangerous ones ring like an alarm; being off route is a normal notification
+    expect(background.notifier.alarms, ['Are you safe?']);
+    await background.alert(AlertType.emergencyTriggered);
+    expect(background.notifier.alarms, [
+      'Are you safe?',
+      'Emergency alert raised',
     ]);
     background.dispose();
   });

@@ -12,6 +12,22 @@ import '../../profile/presentation/profile_edit_sheet.dart';
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
+  Future<void> _testAlarm(BuildContext context, WidgetRef ref) async {
+    final notifier = ref.read(alertNotifierProvider);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text('The alarm will ring in 8 seconds.')),
+      );
+    await Future<void>.delayed(const Duration(seconds: 8));
+    await notifier.show(
+      id: 9001,
+      title: 'Test alarm',
+      body: 'This is how SafeWalk rings in an emergency. Tap to stop it.',
+      alarm: true,
+    );
+  }
+
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     final yes = await showDialog<bool>(
       context: context,
@@ -110,6 +126,18 @@ class SettingsScreen extends ConsumerWidget {
                     onPressed: () =>
                         ref.read(locationServiceProvider).openSettings(),
                     child: const Text('Open settings'),
+                  ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.alarm),
+                  title: const Text('Test the alarm'),
+                  subtitle: const Text(
+                    'Rings in 8 seconds. Press Home or lock the phone to hear it as it would during a walk.',
+                  ),
+                  trailing: TextButton(
+                    onPressed: () => _testAlarm(context, ref),
+                    child: const Text('Test'),
                   ),
                 ),
               ],

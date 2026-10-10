@@ -10,6 +10,9 @@ Companion app to the SafeWalk web client. Same backend, same design tokens.
 
 `env/*.json` is gitignored. Debug builds allow plain http to localhost; release builds do not.
 
+## Release build
+`flutter build apk --release --dart-define-from-file=env/prod.json` (a `prod.json` with the real `BASE_URL` over https). Release builds refuse plain http. Signing keys are not in this repo.
+
 ## Checks
 `flutter analyze` and `flutter test`
 
@@ -17,3 +20,4 @@ Companion app to the SafeWalk web client. Same backend, same design tokens.
 `lib/core` shared infrastructure (config, network, storage, theme, router, widgets), `lib/features/<name>` one folder per feature.
 Phases follow `../frontend/docs/02_SAFEWALK_FLUTTER_MASTER_PLAN.md`; deviations are listed in `docs/DECISIONS.md`.
 
+Before handing the app over, walk through `docs/DEVICE_TEST_CHECKLIST.md`.
