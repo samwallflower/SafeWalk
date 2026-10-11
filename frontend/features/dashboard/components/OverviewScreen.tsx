@@ -8,13 +8,19 @@ import { SessionsList } from "@/features/sessions/components/SessionsList";
 
 import { ContactsPanel } from "./ContactsPanel";
 import { ProfileHeader } from "./ProfileHeader";
+import { ReportsByCategoryPanel } from "./ReportsByCategoryPanel";
 import { StatsGrid } from "./StatsGrid";
+import { WalksChartPanel } from "./WalksChartPanel";
 
 export function OverviewScreen() {
   return (
     <div className="space-y-6">
       <ProfileHeader />
       <StatsGrid />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <WalksChartPanel />
+        <ReportsByCategoryPanel />
+      </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
           <SectionPanel
