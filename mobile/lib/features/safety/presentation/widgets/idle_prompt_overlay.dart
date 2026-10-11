@@ -7,7 +7,7 @@ import '../../../../core/format/format.dart';
 import '../../../../core/theme/colors.dart';
 import '../../domain/idle_prompt.dart';
 
-/// Full-screen "Are you safe?" with a countdown and one huge button.
+/// Full-screen "Are you safe?" with a countdown and one clear button.
 class IdlePromptOverlay extends StatefulWidget {
   const IdlePromptOverlay({
     super.key,
@@ -63,7 +63,7 @@ class _IdlePromptOverlayState extends State<IdlePromptOverlay> {
     final left = widget.prompt.remaining(DateTime.now());
     final expired = widget.prompt.expiredAt(DateTime.now());
     return Material(
-      color: AppColors.foreground,
+      color: AppColors.background,
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -75,7 +75,7 @@ class _IdlePromptOverlayState extends State<IdlePromptOverlay> {
                 'Are you safe?',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.displaySmall?.copyWith(
-                  color: Colors.white,
+                  color: AppColors.foreground,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -86,7 +86,7 @@ class _IdlePromptOverlayState extends State<IdlePromptOverlay> {
                     : 'No movement detected. Please confirm you are okay.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.white70,
+                  color: AppColors.mutedForeground,
                 ),
               ),
               const SizedBox(height: 28),
@@ -94,7 +94,7 @@ class _IdlePromptOverlayState extends State<IdlePromptOverlay> {
                 expired ? '00:00' : formatClock(left),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.displayMedium?.copyWith(
-                  color: expired ? AppColors.destructiveSoft : Colors.white,
+                  color: expired ? AppColors.destructive : AppColors.primary,
                   fontWeight: FontWeight.w800,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
@@ -104,34 +104,28 @@ class _IdlePromptOverlayState extends State<IdlePromptOverlay> {
                 Text(
                   widget.error!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.destructiveSoft),
+                  style: const TextStyle(color: AppColors.destructive),
                 ),
                 const SizedBox(height: 12),
               ],
               SizedBox(
-                height: 96,
+                height: 64,
                 child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
                   onPressed: _busy ? null : _answer,
                   child: _busy
                       ? const SizedBox(
-                          width: 30,
-                          height: 30,
+                          width: 26,
+                          height: 26,
                           child: CircularProgressIndicator(
                             strokeWidth: 3,
-                            color: Colors.white,
+                            color: AppColors.primary,
                           ),
                         )
                       : const Text(
                           "I'm OK",
                           style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                 ),
