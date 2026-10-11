@@ -31,37 +31,37 @@ class HeatDotsLayer extends StatelessWidget {
   }
 }
 
-/// Tappable incidents at street level: one dot each. Dots that would overlap are fanned out a little.
+/// Tappable spots at street level: one dot per place, exactly where the reports were made.
 class IncidentMarkersLayer extends StatelessWidget {
   const IncidentMarkersLayer({
     super.key,
-    required this.placed,
-    required this.selectedId,
+    required this.spots,
+    required this.selectedKey,
     required this.onTap,
   });
 
-  final List<PlacedIncident> placed;
-  final int? selectedId;
-  final void Function(Incident incident) onTap;
+  final List<Spot> spots;
+  final String? selectedKey;
+  final void Function(Spot spot) onTap;
 
   @override
   Widget build(BuildContext context) {
     return MarkerLayer(
       markers: [
-        for (final item in placed)
+        for (final spot in spots)
           Marker(
-            point: item.position,
+            point: spot.position,
             width: 44,
             height: 44,
             child: Semantics(
               button: true,
-              label: '${item.incident.category.name} incident',
+              label: spot.incidents.length == 1
+                  ? '${spot.incidents.first.category.name} incident'
+                  : '${spot.incidents.length} incidents',
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => onTap(item.incident),
-                child: Center(
-                  child: _Dot(selected: item.incident.id == selectedId),
-                ),
+                onTap: () => onTap(spot),
+                child: Center(child: _Dot(selected: spot.key == selectedKey)),
               ),
             ),
           ),

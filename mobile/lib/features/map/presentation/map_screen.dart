@@ -20,7 +20,7 @@ import 'state/map_filters_controller.dart';
 import 'state/map_focus.dart';
 import 'state/map_view_controller.dart';
 import 'widgets/filter_sheet.dart';
-import 'widgets/incident_sheet.dart';
+import 'widgets/spot_sheet.dart';
 import 'widgets/map_layers.dart';
 import 'widgets/map_status_chip.dart';
 import 'widgets/place_search_bar.dart';
@@ -37,7 +37,9 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   final _map = MapController();
-  Incident? _selected;
+  Spot? _selected;
+  List<Incident>? _groupedFrom;
+  List<Spot> _spots = const [];
   LatLng? _me;
   bool _locating = false;
   double _zoom = defaultMapZoom;
@@ -82,12 +84,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   void _goTo(Place place) =>
       _map.move(LatLng(place.latitude, place.longitude), 15);
 
-  void _select(Incident incident) {
-    setState(() => _selected = incident);
-    _map.move(
-      LatLng(incident.latitude, incident.longitude),
-      math.max(_zoom, 15),
-    );
+  void _select(Spot spot) {
+    setState(() => _selected = spot);
+    _map.move(spot.position, math.max(_zoom, 15));
   }
 
   Future<void> _locate() async {
@@ -148,19 +147,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final theme = Theme.of(context);
     final center = view.center ?? defaultMapCenter;
 
-    final nearest = nearestIncidents(
-      data.incidents,
-      center,
-      maxIncidentMarkers,
-    );
-    final placed = spreadOverlapping(
-      nearest,
-      zoom: view.viewport?.zoom ?? _zoom,
-    );
-    final inView = view.viewport == null
-        ? nearest
-        : incidentsInBounds(nearest, view.viewport!.bounds);
-    final showMarkers = placed.isNotEmpty;
+    // Reports made at the same place share one dot. Grouped once per load, not on every frame.
+    if (!identical(_groupedFrom, data.incidents)) {
+      _groupedFrom = data.incidents;
+      _spots = groupBySpot(data.incidents);
+    }
+    final nearest = nearestSpots(_spots, center, maxIncidentMarkers);
+    final inViewCount = view.viewport == null
+        ? data.incidents.length
+        : reportsInBounds(_spots, view.viewport!.bounds);
+    final showMarkers = nearest.isNotEmpty;
 
     final String? status;
     IconData? statusIcon;
@@ -174,7 +170,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       status = 'Loading incidents';
     } else if (view.wantsPoints) {
       status =
-          '${inView.length} ${inView.length == 1 ? 'incident' : 'incidents'} in view';
+          '$inViewCount ${inViewCount == 1 ? 'incident' : 'incidents'} in view';
       statusIcon = Icons.place_outlined;
     } else {
       status = '${data.heatPoints.length} reports in this area';
@@ -214,8 +210,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               if (showMarkers)
                 IncidentMarkersLayer(
-                  placed: placed,
-                  selectedId: _selected?.id,
+                  spots: nearest,
+                  selectedKey: _selected?.key,
                   onTap: _select,
                 ),
               if (_me != null) MyLocationLayer(point: _me!),
@@ -254,7 +250,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   if (data.error != null)
                     Material(
                       color: theme.colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
                         child: Row(
@@ -296,7 +292,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ),
           Positioned(
             right: 12,
-            bottom: _selected == null ? 24 : 250,
+            bottom: _selected == null
+                ? 24
+                : (_selected!.incidents.length == 1
+                      ? 250
+                      : MediaQuery.sizeOf(context).height * 0.55 + 24),
             child: FloatingActionButton.small(
               heroTag: 'locate',
               tooltip: 'My location',
@@ -317,8 +317,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               left: 12,
               right: 12,
               bottom: 12,
-              child: IncidentSheet(
-                incident: _selected!,
+              child: SpotSheet(
+                spot: _selected!,
                 onClose: () => setState(() => _selected = null),
               ),
             ),
