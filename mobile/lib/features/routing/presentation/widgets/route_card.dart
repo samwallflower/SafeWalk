@@ -44,14 +44,14 @@ class RouteCard extends StatelessWidget {
           'Route ${route.rank}, ${formatDistance(route.actualDistanceMeters)}, ${risk.label}',
       child: Material(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           onTap: onSelect,
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: selected ? AppColors.primary : AppColors.border,
                 width: selected ? 2 : 1,

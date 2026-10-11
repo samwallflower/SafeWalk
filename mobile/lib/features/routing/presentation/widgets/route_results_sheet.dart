@@ -47,7 +47,7 @@ class RouteResultsSheet extends StatelessWidget {
         elevation: 8,
         shadowColor: Colors.black38,
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         clipBehavior: Clip.antiAlias,
         child: ListView(
           controller: scroll,

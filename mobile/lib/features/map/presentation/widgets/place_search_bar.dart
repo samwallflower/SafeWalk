@@ -65,7 +65,7 @@ class _PlaceSearchBarState extends ConsumerState<PlaceSearchBar> {
           elevation: 3,
           shadowColor: Colors.black26,
           color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.only(left: 14, right: 6),
             child: Row(
@@ -132,7 +132,7 @@ class _Results extends ConsumerWidget {
         elevation: 3,
         shadowColor: Colors.black26,
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
         child: results.when(
           loading: () => const Padding(

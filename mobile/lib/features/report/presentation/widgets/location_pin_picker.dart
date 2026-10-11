@@ -30,7 +30,7 @@ class LocationPinPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: SizedBox(
         height: 220,
         child: Listener(

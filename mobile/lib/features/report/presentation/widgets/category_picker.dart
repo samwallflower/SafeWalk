@@ -99,15 +99,15 @@ class _CategoryCard extends StatelessWidget {
       label: name,
       child: Material(
         color: selected ? AppColors.infoSoft : AppColors.muted,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           child: Container(
             constraints: const BoxConstraints(minHeight: 64),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: selected ? AppColors.primary : Colors.transparent,
                 width: 1.5,
@@ -144,7 +144,7 @@ class _CategoryCard extends StatelessWidget {
                   const Padding(
                     padding: EdgeInsets.only(left: 6),
                     child: Icon(
-                      Icons.check_circle,
+                      Icons.check_circle_outline,
                       size: 20,
                       color: AppColors.primary,
                     ),

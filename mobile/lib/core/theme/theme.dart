@@ -5,14 +5,43 @@ import 'colors.dart';
 
 const _radius = 12.0;
 
+/// One set of corners: controls 12, cards 20, sheets 28.
+const cardRadius = 20.0;
+const sheetRadius = 28.0;
+
+TextTheme _textTheme(TextTheme base, bool downloadFont) {
+  final body = (downloadFont ? GoogleFonts.figtreeTextTheme(base) : base).apply(
+    bodyColor: AppColors.foreground,
+    displayColor: AppColors.foreground,
+  );
+  if (!downloadFont) return body;
+  TextStyle? head(TextStyle? style) => style == null
+      ? null
+      : GoogleFonts.bricolageGrotesque(
+          textStyle: style,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        );
+  return body.copyWith(
+    displayLarge: head(body.displayLarge),
+    displayMedium: head(body.displayMedium),
+    displaySmall: head(body.displaySmall),
+    headlineLarge: head(body.headlineLarge),
+    headlineMedium: head(body.headlineMedium),
+    headlineSmall: head(body.headlineSmall),
+    titleLarge: head(body.titleLarge),
+  );
+}
+
 /// [downloadFont] is turned off in tests, where google_fonts cannot fetch Inter.
 ThemeData buildTheme({bool downloadFont = true}) {
   const scheme = ColorScheme.light(
     primary: AppColors.primary,
     onPrimary: Colors.white,
-    primaryContainer: AppColors.infoSoft,
-    onPrimaryContainer: AppColors.primary,
-    secondary: AppColors.brand,
+    primaryContainer: AppColors.leaf,
+    onPrimaryContainer: AppColors.foreground,
+    secondary: AppColors.lantern,
+    onSecondary: AppColors.foreground,
     error: AppColors.destructive,
     onError: Colors.white,
     errorContainer: AppColors.destructiveSoft,
@@ -34,14 +63,7 @@ ThemeData buildTheme({bool downloadFont = true}) {
   const minSize = Size(64, 52);
 
   return base.copyWith(
-    textTheme:
-        (downloadFont
-                ? GoogleFonts.interTextTheme(base.textTheme)
-                : base.textTheme)
-            .apply(
-              bodyColor: AppColors.foreground,
-              displayColor: AppColors.foreground,
-            ),
+    textTheme: _textTheme(base.textTheme, downloadFont),
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.surface,
       foregroundColor: AppColors.foreground,
@@ -54,13 +76,16 @@ ThemeData buildTheme({bool downloadFont = true}) {
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(cardRadius),
         side: const BorderSide(color: AppColors.border),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: minSize,
+        backgroundColor: AppColors.leaf,
+        foregroundColor: AppColors.foreground,
+        disabledBackgroundColor: AppColors.muted,
         shape: shape,
         textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
       ),
@@ -69,7 +94,8 @@ ThemeData buildTheme({bool downloadFont = true}) {
       style: OutlinedButton.styleFrom(
         minimumSize: minSize,
         shape: shape,
-        side: const BorderSide(color: AppColors.border),
+        foregroundColor: AppColors.primary,
+        side: const BorderSide(color: AppColors.primary, width: 1.5),
         textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
       ),
     ),

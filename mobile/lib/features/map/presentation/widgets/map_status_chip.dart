@@ -21,7 +21,7 @@ class MapStatusChip extends StatelessWidget {
         elevation: 2,
         shadowColor: Colors.black26,
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           child: Row(
