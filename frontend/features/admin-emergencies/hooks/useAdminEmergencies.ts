@@ -17,6 +17,14 @@ export function useAllEmergencies() {
   });
 }
 
+export function useSessionEmergenciesAdmin(sessionId: number) {
+  return useQuery({
+    queryKey: ["admin", "emergencies", "session", sessionId],
+    queryFn: ({ signal }) => emergenciesAdminApi.forSession(sessionId, signal),
+    staleTime: 30_000,
+  });
+}
+
 /** One cheap count call per trigger source (no list download). */
 export function useEmergencyCounts() {
   const results = useQueries({

@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontalIcon } from "lucide-react";
+import { EyeIcon, MoreHorizontalIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Chip } from "@/components/shared/Chip";
@@ -15,6 +15,7 @@ import { useStreetName } from "@/hooks/useStreetName";
 import { formatDateTime } from "@/lib/format";
 
 import { useAllEmergencies, useDeleteEmergency, useSetEmergencyResolved } from "../hooks/useAdminEmergencies";
+import { EmergencyDrawer } from "./EmergencyDrawer";
 
 function Location({ emergency }: { emergency: Emergency }) {
   const street = useStreetName(emergency.triggerLatitude, emergency.triggerLongitude);
@@ -33,6 +34,8 @@ export function EmergenciesTable() {
   const remove = useDeleteEmergency();
   const [source, setSource] = useState<EmergencyTriggerSource | typeof ALL>(ALL);
   const [deleting, setDeleting] = useState<Emergency | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
+  const viewing = emergencies.data?.find((e) => e.id === viewingId) ?? null;
 
   const rows = useMemo(() => {
     const sorted = [...(emergencies.data ?? [])].sort((a, b) => b.triggerTimestamp.localeCompare(a.triggerTimestamp));
@@ -59,17 +62,24 @@ export function EmergenciesTable() {
       header: "Actions",
       className: "text-right",
       cell: (e) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`Actions for emergency ${e.id}`} />}>
-            <MoreHorizontalIcon />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem disabled={setResolved.isPending} onClick={() => setResolved.mutate({ id: e.id, resolved: !e.resolved })}>
-              {e.resolved ? "Mark unresolved" : "Mark resolved"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setDeleting(e)}>Delete</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <span className="flex justify-end gap-1">
+          <Button type="button" variant="ghost" size="icon-sm" aria-label={`View emergency ${e.id}`} onClick={() => setViewingId(e.id)}>
+            <EyeIcon />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`Actions for emergency ${e.id}`} />}>
+              <MoreHorizontalIcon />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem disabled={setResolved.isPending} onClick={() => setResolved.mutate({ id: e.id, resolved: !e.resolved })}>
+                {e.resolved ? "Mark unresolved" : "Mark resolved"}
+              </DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => setDeleting(e)}>
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </span>
       ),
     },
   ];
@@ -106,6 +116,7 @@ export function EmergenciesTable() {
         onRetry={() => void emergencies.refetch()}
         emptyTitle={source === ALL ? "No emergencies recorded" : "No emergencies from this source"}
       />
+      <EmergencyDrawer emergency={viewing} onOpenChange={(open) => !open && setViewingId(null)} />
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
