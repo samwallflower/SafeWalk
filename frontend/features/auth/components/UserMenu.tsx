@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 
-import { Chip } from "@/components/shared/Chip";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -29,11 +28,6 @@ export function UserMenu() {
   }
 
   return (
-    <>
-      <Chip tone={isAdmin ? "info" : "success"} className="hidden sm:inline-flex">
-        {isAdmin ? "Admin" : "Verified Walker"}
-      </Chip>
-      <AccountMenuLazy email={user.email} isAdmin={isAdmin} />
-    </>
+    <AccountMenuLazy email={user.email} isAdmin={isAdmin} />
   );
 }

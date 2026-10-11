@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOutIcon, UserIcon } from "lucide-react";
+import { LayoutDashboardIcon, LogOutIcon, ShieldCheckIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -28,12 +28,18 @@ export function AccountMenu({ email, isAdmin }: AccountMenuProps) {
       <DropdownMenuTrigger render={<Button variant="default" size="icon-lg" className="rounded-full bg-brand text-foreground" aria-label="Account menu" />}>
         <UserIcon />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="min-w-60">
         <DropdownMenuGroup>
-          <DropdownMenuLabel>{email}</DropdownMenuLabel>
+          <DropdownMenuLabel className="flex flex-col gap-0.5 py-2">
+            <span className="truncate text-sm font-semibold text-foreground">{email}</span>
+            <span className="text-xs font-normal text-muted-foreground">{isAdmin ? "Administrator" : "Signed in"}</span>
+          </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem render={<Link href={isAdmin ? "/admin" : "/dashboard"} />}>{isAdmin ? "Admin dashboard" : "My Safety"}</DropdownMenuItem>
+        <DropdownMenuItem render={<Link href={isAdmin ? "/admin" : "/dashboard"} />}>
+          {isAdmin ? <LayoutDashboardIcon /> : <ShieldCheckIcon />}
+          {isAdmin ? "Admin panel" : "My Safety"}
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => logout.mutate()}>
           <LogOutIcon /> Log out
         </DropdownMenuItem>
