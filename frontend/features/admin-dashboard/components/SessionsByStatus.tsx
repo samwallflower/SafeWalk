@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 
-import { BarList } from "@/components/shared/BarList";
+import { DonutChart } from "@/components/shared/DonutChart";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { ListSkeleton } from "@/components/shared/ListSkeleton";
@@ -12,10 +12,10 @@ import { useAllSessions } from "@/features/admin-sessions/hooks/useAdminSessions
 import { countSessionsByStatus } from "../lib/admin-stats";
 
 const SESSION_COLORS = {
-  COMPLETED: "#0a6b32",
-  ACTIVE: "#0b52b8",
-  EMERGENCY: "#c4161c",
-  ABANDONED: "#5b6475",
+  COMPLETED: "#8be284",
+  ACTIVE: "#fbcb62",
+  EMERGENCY: "#cc4631",
+  ABANDONED: "#c9d6ce",
 } as const;
 
 export function SessionsByStatus() {
@@ -36,8 +36,9 @@ export function SessionsByStatus() {
       ) : !counts || sessions.data.length === 0 ? (
         <EmptyState title="No walk sessions yet" />
       ) : (
-        <BarList
-          items={(Object.keys(counts) as (keyof typeof counts)[]).map(
+        <DonutChart
+          centreLabel="sessions"
+          segments={(Object.keys(counts) as (keyof typeof counts)[]).map(
             (status) => ({
               label: status.charAt(0) + status.slice(1).toLowerCase(),
               value: counts[status],

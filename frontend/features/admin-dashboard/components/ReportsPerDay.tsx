@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { ListSkeleton } from "@/components/shared/ListSkeleton";
-import { MiniBars } from "@/components/shared/MiniBars";
+import { AreaChart } from "@/components/shared/AreaChart";
 import { SectionPanel } from "@/components/shared/SectionPanel";
 
 import { useWindowReports } from "../hooks/useWindowReports";
@@ -29,7 +29,7 @@ export function ReportsPerDay({ window }: { window: StatsWindow }) {
       ) : points.length === 0 ? (
         <EmptyState title="No reports in this period" />
       ) : (
-        <MiniBars points={points} />
+        <AreaChart points={points} ariaLabel="Reports per day" />
       )}
     </SectionPanel>
   );

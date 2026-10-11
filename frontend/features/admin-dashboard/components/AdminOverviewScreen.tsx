@@ -22,11 +22,15 @@ export function AdminOverviewScreen() {
         actions={<WindowToggle value={window} onChange={setWindow} />}
       />
       <AdminStatsGrid window={window} />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <ReportsPerDay window={window} />
+        </div>
+        <SessionsByStatus />
+      </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <IncidentBreakdown window={window} />
-        <ReportsPerDay window={window} />
         <EmergenciesBySource />
-        <SessionsByStatus />
       </div>
     </div>
   );

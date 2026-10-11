@@ -1,6 +1,6 @@
 "use client";
 
-import { BarList } from "@/components/shared/BarList";
+import { ColumnChart } from "@/components/shared/ColumnChart";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { ListSkeleton } from "@/components/shared/ListSkeleton";
@@ -20,11 +20,13 @@ export function EmergenciesBySource() {
       ) : total === 0 ? (
         <EmptyState title="No emergencies recorded" />
       ) : (
-        <BarList
+        <ColumnChart
+          highlightMax={false}
+          ariaLabel="Emergencies by trigger"
           items={counts.map((c) => ({
             label: SOURCE_LABEL[c.source],
             value: c.count,
-            color: "#c4161c",
+            color: "#e8806e",
           }))}
         />
       )}

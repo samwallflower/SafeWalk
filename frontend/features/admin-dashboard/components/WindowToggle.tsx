@@ -19,7 +19,7 @@ interface WindowToggleProps {
 export function WindowToggle({ value, onChange }: WindowToggleProps) {
   return (
     <div
-      className="flex gap-1 rounded-xl bg-muted p-1"
+      className="flex gap-1 rounded-lg border bg-card p-1"
       role="group"
       aria-label="Time window"
     >
@@ -30,7 +30,7 @@ export function WindowToggle({ value, onChange }: WindowToggleProps) {
           variant="ghost"
           size="sm"
           aria-pressed={o.value === value}
-          className={cn(o.value === value && "bg-card text-primary shadow-sm")}
+          className={cn("rounded-md", o.value === value ? "bg-leaf font-bold text-foreground hover:bg-leaf" : "text-muted-foreground")}
           onClick={() => onChange(o.value)}
         >
           {o.label}

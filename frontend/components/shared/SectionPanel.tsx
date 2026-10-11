@@ -12,7 +12,7 @@ interface SectionPanelProps {
 /** White card with a title row, used for dashboard sections. */
 export function SectionPanel({ title, icon, action, headerExtra, children }: SectionPanelProps) {
   return (
-    <section className="space-y-4 rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/5">
+    <section className="space-y-4 rounded-xl border bg-card p-6">
       <header className="flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-lg font-bold [&_svg]:size-5 [&_svg]:text-primary">
           {icon}
