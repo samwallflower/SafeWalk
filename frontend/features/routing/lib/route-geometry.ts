@@ -5,8 +5,8 @@ import { decodePolyline } from "@/lib/geo/polyline";
 
 import type { RouteDto } from "../types";
 
-export const RECOMMENDED_COLOR = "#0a6b32";
-const ALTERNATIVE_COLORS = ["#0b52b8", "#9a6700", "#5b6475", "#7c3aed"] as const;
+export const RECOMMENDED_COLOR = "#1e6a1a";
+const ALTERNATIVE_COLORS = ["#1f6fa8", "#b97a00", "#5b6475", "#7c3aed"] as const;
 
 export interface DecodedRoute {
   route: RouteDto;

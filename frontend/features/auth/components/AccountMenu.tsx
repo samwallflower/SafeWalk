@@ -25,7 +25,7 @@ export function AccountMenu({ email, isAdmin }: AccountMenuProps) {
   const logout = useLogout();
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="default" size="icon-lg" className="rounded-full bg-brand" aria-label="Account menu" />}>
+      <DropdownMenuTrigger render={<Button variant="default" size="icon-lg" className="rounded-full bg-brand text-foreground" aria-label="Account menu" />}>
         <UserIcon />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

@@ -1,6 +1,6 @@
 import type { LayerProps } from "react-map-gl/mapbox";
 
-export const MARKER_COLOR = "#c4161c";
+export const MARKER_COLOR = "#cc4631";
 
 export const HEAT_LAYER_ID = "incident-density";
 export const HALO_LAYER_ID = "incident-halo";

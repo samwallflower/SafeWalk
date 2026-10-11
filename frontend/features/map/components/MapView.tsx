@@ -104,7 +104,7 @@ export function MapView({
       <HeatmapLayer points={heatPoints} />
       <IncidentPoints incidents={incidents} selectedId={selectedId} />
       {userLocation ? (
-        <Marker latitude={userLocation.latitude} longitude={userLocation.longitude} color="#0b52b8" />
+        <Marker latitude={userLocation.latitude} longitude={userLocation.longitude} color="#1e6a1a" />
       ) : null}
       {hovered ? <IncidentPopup incident={hovered} variant="hover" onClose={() => onHover(null)} /> : null}
       {selected ? <IncidentPopup incident={selected} variant="selected" onClose={() => onSelect(null)} /> : null}

@@ -71,7 +71,7 @@ export function RoutesMap({ mapRef, routes, selectedId, hoveredId, origin, desti
           <span className="block size-4 rounded-full border-[3px] border-white bg-primary shadow" aria-label="Start" />
         </Marker>
       ) : null}
-      {destination ? <Marker latitude={destination.latitude} longitude={destination.longitude} color="#c4161c" /> : null}
+      {destination ? <Marker latitude={destination.latitude} longitude={destination.longitude} color="#cc4631" /> : null}
     </Map>
   );
 }

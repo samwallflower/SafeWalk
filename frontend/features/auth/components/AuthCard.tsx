@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import Image from "next/image";
+
+import { LanternPin } from "@/components/shared/LanternPin";
 
 interface AuthCardProps {
   title: string;
@@ -11,12 +12,12 @@ interface AuthCardProps {
 export function AuthCard({ title, description, children, footer }: AuthCardProps) {
   return (
     <div className="mx-auto w-full max-w-md px-4 py-10">
-      <div className="rounded-2xl bg-card p-8 shadow-sm ring-1 ring-foreground/5">
+      <div className="rounded-xl border bg-card p-8">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <span className="rounded-2xl bg-info-soft p-2.5">
-            <Image src="/safewalk-logo.png" alt="" width={44} height={44} className="rounded-xl" priority />
+          <span className="rounded-xl bg-accent p-3">
+            <LanternPin size={44} />
           </span>
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+          <h1 className="text-3xl font-extrabold">{title}</h1>
           <p className="text-sm leading-6 text-muted-foreground">{description}</p>
         </div>
         {children}

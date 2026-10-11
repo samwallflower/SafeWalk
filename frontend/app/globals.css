@@ -5,13 +5,16 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-sans: var(--font-figtree), -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-bricolage), var(--font-sans);
   --color-destructive-soft: var(--destructive-soft);
   --color-success-soft: var(--success-soft);
   --color-info-soft: var(--info-soft);
   --color-brand: var(--brand);
+  --color-leaf: var(--leaf);
+  --color-lantern: var(--lantern);
+  --color-warning-soft: var(--warning-soft);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -43,55 +46,58 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-3xl: 28px;
+  --radius-4xl: 28px;
 }
 
-/* Tokens sampled from backend-contract/design/*.png */
+/* SafeWalk palette: leaf (soft green fills), forest (text and icons), lantern (warm accent), coral (alerts only) */
 :root {
-  --background: #f7f9fd;
-  --foreground: #161a23;
+  --background: #f5fcf4;
+  --foreground: #16301a;
   --card: #ffffff;
-  --card-foreground: #161a23;
+  --card-foreground: #16301a;
   --popover: #ffffff;
-  --popover-foreground: #161a23;
-  --primary: #0b52b8;
+  --popover-foreground: #16301a;
+  --primary: #1e6a1a;
   --primary-foreground: #ffffff;
-  --secondary: #eef2fa;
-  --secondary-foreground: #161a23;
-  --muted: #eef2fa;
-  --muted-foreground: #5b6475;
-  --accent: #e6eefc;
-  --accent-foreground: #0b3f91;
-  --destructive: #c4161c;
-  --destructive-soft: #fde4e4;
-  --success: #0a6b32;
-  --success-soft: #d3f5db;
-  --warning: #9a6700;
-  --info-soft: #e6eefc;
-  --brand: #0a66dd;
-  --border: #e3e8f1;
-  --input: #dfe5f0;
-  --ring: #0b52b8;
-  --chart-1: #0b52b8;
-  --chart-2: #0a6b32;
-  --chart-3: #9a6700;
-  --chart-4: #c4161c;
-  --chart-5: #5b6475;
+  --secondary: #e9f7e6;
+  --secondary-foreground: #16301a;
+  --muted: #e9f7e6;
+  --muted-foreground: #566b63;
+  --accent: #e3fadf;
+  --accent-foreground: #1e6a1a;
+  --destructive: #cc4631;
+  --destructive-soft: #fde7e2;
+  --success: #1e6a1a;
+  --success-soft: #e3fadf;
+  --warning: #6b4500;
+  --warning-soft: #fff3d1;
+  --info-soft: #e3fadf;
+  --leaf: #b4f2ae;
+  --lantern: #fbcb62;
+  --brand: #b4f2ae;
+  --border: #daefd6;
+  --input: #cfe7ca;
+  --ring: #1e6a1a;
+  --chart-1: #8be284;
+  --chart-2: #fbcb62;
+  --chart-3: #f2917f;
+  --chart-4: #7fb8d9;
+  --chart-5: #c9d6ce;
   --radius: 0.75rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #161a23;
-  --sidebar-primary: #0b52b8;
+  --sidebar-foreground: #16301a;
+  --sidebar-primary: #1e6a1a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef2fa;
-  --sidebar-accent-foreground: #161a23;
-  --sidebar-border: #e3e8f1;
-  --sidebar-ring: #0b52b8;
+  --sidebar-accent: #e9f7e6;
+  --sidebar-accent-foreground: #16301a;
+  --sidebar-border: #daefd6;
+  --sidebar-ring: #1e6a1a;
 }
 
 @layer base {
@@ -104,13 +110,28 @@
   html {
     @apply font-sans;
   }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Primary buttons are soft leaf green with dark text; the deep green stays for text, icons and focus. */
+:is(button, a).bg-primary.text-primary-foreground {
+  background-color: var(--leaf);
+  color: var(--foreground);
+}
+:is(button, a).bg-primary.text-primary-foreground:hover {
+  background-color: #9fe897;
 }
 
 /* Mapbox chrome, matched to the card style in the designs */
 .mapboxgl-popup-content {
-  border-radius: 14px;
+  border-radius: 20px;
   padding: 14px;
-  box-shadow: 0 8px 28px rgb(20 30 60 / 0.16);
+  box-shadow: 0 8px 28px rgb(22 48 26 / 0.16);
   font-family: inherit;
 }
 .mapboxgl-popup-close-button {
@@ -120,8 +141,8 @@
   border-radius: 8px;
 }
 .mapboxgl-ctrl-group {
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgb(20 30 60 / 0.12);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgb(22 48 26 / 0.12);
 }
 .mapboxgl-ctrl-top-right {
   margin-top: 5.5rem;
