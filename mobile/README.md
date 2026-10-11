@@ -2,6 +2,13 @@
 
 Companion app to the SafeWalk web client. Same backend, same design tokens.
 
+## Screenshots
+
+| | | | |
+| --- | --- | --- | --- |
+| <img src="screenshots/login.jpg" width="170"> | <img src="screenshots/map.jpg" width="170"> | <img src="screenshots/plan-route.jpg" width="170"> | <img src="screenshots/report.jpg" width="170"> |
+| <img src="screenshots/walk.jpg" width="170"> | <img src="screenshots/emergency.jpg" width="170"> | <img src="screenshots/are-you-safe.jpg" width="170"> | <img src="screenshots/my-safety.jpg" width="170"> |
+
 ## Run on a phone
 1. Start the backend on port 8080.
 2. Put the phone on the same Wi-Fi as this computer. In `env/dev.json` set `BASE_URL` to this computer's address, e.g. `http://192.168.1.71:8080` (see `ipconfig`; allow port 8080 through Windows Firewall on private networks). The USB cable is only needed to install the app. If the cable is stable you can instead use `http://127.0.0.1:8080` plus `adb reverse tcp:8080 tcp:8080` (the forward is lost whenever USB reconnects).
@@ -18,6 +25,3 @@ Companion app to the SafeWalk web client. Same backend, same design tokens.
 
 ## Structure
 `lib/core` shared infrastructure (config, network, storage, theme, router, widgets), `lib/features/<name>` one folder per feature.
-Phases follow `../frontend/docs/02_SAFEWALK_FLUTTER_MASTER_PLAN.md`; deviations are listed in `docs/DECISIONS.md`.
-
-Before handing the app over, walk through `docs/DEVICE_TEST_CHECKLIST.md`.
