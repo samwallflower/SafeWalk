@@ -4,6 +4,19 @@ Safety-aware walking navigation for pedestrians. Crowd-sourced incident reports 
 reports explorer and safety-ranked route suggestions. Next.js (App Router) + shadcn/ui front end for the SafeWalk
 Spring Boot backend.
 
+## Screenshots
+
+![Home page](screenshots/home.jpg)
+
+| | |
+|---|---|
+| ![Explore map](screenshots/map.jpg) | ![Plan a route](screenshots/plan-route.jpg) |
+| ![Incident reports](screenshots/reports.jpg) | ![User dashboard](screenshots/dashboard.jpg) |
+| ![Contact drawer](screenshots/contact-drawer.jpg) | ![Admin overview](screenshots/admin-overview.jpg) |
+| ![Admin reports](screenshots/admin-reports.jpg) | ![Admin users](screenshots/admin-users.jpg) |
+
+![Admin sessions](screenshots/admin-sessions.jpg)
+
 ## What is in it
 
 | Area | Pages | Notes |
@@ -32,7 +45,7 @@ pnpm dev                     # http://localhost:3000
 |---|---|---|
 | `BACKEND_URL` | server only | Spring base URL, default `http://localhost:8080` |
 | `API_PREFIX` | server only | Backend `api.prefix`, default `/api/v1` |
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | browser | Mapbox **public** token (restrict it by URL in the Mapbox dashboard) |
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | browser | Mapbox token |
 | `NEXT_PUBLIC_DEMO_LOGIN_ENABLED` | browser | `true` shows the "Use demo user / admin" buttons on `/login` |
 | `NEXT_PUBLIC_DEMO_USER_EMAIL`, `..._PASSWORD`, `NEXT_PUBLIC_DEMO_ADMIN_EMAIL`, `..._PASSWORD` | browser | Credentials the demo buttons fill in |
 
@@ -65,11 +78,6 @@ docs/                API contract, plans and DECISIONS.md
 
 Conventions: no `any`; API functions are typed from the Java DTOs; every data view has loading, empty and error
 states; `userId` always comes from the session, never from the URL or a form.
-
-## Backend contract
-
-Endpoints and response shapes come from `backend-contract/`. If the backend changes, update that folder first. See
-[docs/DECISIONS.md](docs/DECISIONS.md) for why things are built the way they are, including the data-size limits.
 
 ## Testing
 
