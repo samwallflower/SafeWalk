@@ -68,12 +68,10 @@ class _SosButtonState extends State<SosButton>
         child: AnimatedBuilder(
           animation: _hold,
           builder: (context, _) => ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(12),
             child: Container(
-              height: 68,
-              color: AppColors.destructive.withValues(
-                alpha: widget.busy ? 0.6 : 1,
-              ),
+              height: 64,
+              color: AppColors.alarm.withValues(alpha: widget.busy ? 0.6 : 1),
               child: Stack(
                 children: [
                   FractionallySizedBox(
@@ -96,19 +94,19 @@ class _SosButtonState extends State<SosButton>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(
-                                Icons.sos,
+                                Icons.warning_amber_rounded,
                                 color: Colors.white,
-                                size: 30,
+                                size: 24,
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
                               Text(
                                 _hold.value > 0
                                     ? 'Keep holding...'
                                     : 'Hold for SOS',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ],

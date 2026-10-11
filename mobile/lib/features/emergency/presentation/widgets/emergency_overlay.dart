@@ -34,24 +34,45 @@ class EmergencyOverlay extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
           children: [
-            const Icon(
-              Icons.crisis_alert,
-              size: 48,
-              color: AppColors.destructive,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Emergency alert sent',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: AppColors.destructive,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              emergency?.source.description ??
-                  'An emergency alert is active for your walk.',
-              style: theme.textTheme.titleMedium,
+            Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppColors.destructiveSoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 30,
+                    color: AppColors.destructive,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Alert sent',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.destructive,
+                          height: 1.1,
+                        ),
+                      ),
+                      Text(
+                        emergency?.source.description ??
+                            'An emergency alert is active for your walk.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             if (state.error != null) ...[
@@ -96,7 +117,7 @@ class EmergencyOverlay extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             _CallSection(latitude: lat, longitude: lng),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
             _SafeButton(resolving: state.resolving),
           ],
         ),
@@ -122,7 +143,7 @@ class _ContactsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Who was notified',
+              'Who was told',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
@@ -145,7 +166,7 @@ class _ContactsCard extends StatelessWidget {
                   child: Row(
                     children: [
                       const Icon(
-                        Icons.check_circle,
+                        Icons.check_circle_outline,
                         size: 20,
                         color: AppColors.success,
                       ),
@@ -209,26 +230,28 @@ class _LocationCard extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const Icon(Icons.place, color: AppColors.destructive),
+            const Icon(
+              Icons.place_outlined,
+              size: 26,
+              color: AppColors.destructive,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Location shared',
+                    'Your location was shared',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  Text(where, style: theme.textTheme.bodyLarge),
-                  if (when.isNotEmpty)
-                    Text(
-                      when,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                  Text(
+                    when.isEmpty ? where : '$where, $when',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
+                  ),
                 ],
               ),
             ),
@@ -354,14 +377,12 @@ class _SafeButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // same height, corners and type size as the call buttons above, so the screen reads as one set
     return SizedBox(
-      height: 72,
-      child: FilledButton.icon(
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.success,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+      height: 64,
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: AppColors.primary, width: 2),
         ),
         onPressed: resolving ? null : () => _confirm(context, ref),
         icon: resolving
@@ -370,13 +391,13 @@ class _SafeButton extends ConsumerWidget {
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 3,
-                  color: Colors.white,
+                  color: AppColors.primary,
                 ),
               )
-            : const Icon(Icons.verified_user, size: 28),
+            : const Icon(Icons.verified_user_outlined, size: 26),
         label: Text(
           resolving ? 'Updating...' : "I'm safe",
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
       ),
     );

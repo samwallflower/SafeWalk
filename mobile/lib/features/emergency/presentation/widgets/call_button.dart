@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/colors.dart';
+
 /// One call button: shows who it is for and the number. Pressing it opens the dialer; it never places the call.
 class CallButton extends StatelessWidget {
   const CallButton({
@@ -17,7 +19,6 @@ class CallButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Semantics(
       button: true,
       label: 'Call $label, $number',
@@ -25,9 +26,8 @@ class CallButton extends StatelessWidget {
       child: FilledButton(
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(64),
-          backgroundColor: emphasis
-              ? theme.colorScheme.error
-              : theme.colorScheme.primary,
+          backgroundColor: emphasis ? AppColors.alarm : AppColors.leaf,
+          foregroundColor: emphasis ? Colors.white : AppColors.foreground,
         ),
         onPressed: onPressed,
         child: Row(

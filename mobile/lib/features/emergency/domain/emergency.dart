@@ -1,5 +1,5 @@
 enum TriggerSource {
-  manualSos('You pressed SOS'),
+  manualSos('You held the SOS button.'),
   idleTimeout('No movement was detected and there was no answer'),
   routeDeviation('You left your route'),
   connectionLost('Your connection to SafeWalk dropped'),

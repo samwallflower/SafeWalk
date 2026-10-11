@@ -119,7 +119,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('Emergency alert sent'), findsOneWidget);
+        expect(find.text('Alert sent'), findsOneWidget);
         expect(find.textContaining('No movement was detected'), findsOneWidget);
         expect(find.text('Mum'), findsOneWidget);
         expect(find.text('Police'), findsOneWidget);
