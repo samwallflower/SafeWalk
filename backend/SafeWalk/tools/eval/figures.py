@@ -88,7 +88,7 @@ def main(scheme=C.MAIN_SCHEME):
     ax.axvspan(1, 5, color="#1a7f37", alpha=0.10, lw=0)
     ax.text(2.2, ax.get_ylim()[0] + 1.5, "useful range", ha="center", fontsize=8, color="#1a7f37")
     ax.axvline(C.DEFAULT_SCALE, ls="--", color="grey", lw=1)
-    ax.text(C.DEFAULT_SCALE * 1.15, ax.get_ylim()[0] + 1.5, "current default", fontsize=8, color="grey")
+    ax.text(C.DEFAULT_SCALE * 1.15, ax.get_ylim()[0] + 1.5, "original default", fontsize=8, color="grey")
     ax.set_xlabel("Penalty scale (metres of virtual distance per severity point, log scale)")
     ax.set_ylabel("Top route differs from shortest (%)")
     ax.set_title(f"Sensitivity to penalty scale ({C.REFERENCE_RADIUS} m buffer)")
