@@ -17,11 +17,11 @@ export function Header() {
         <Logo />
         <NavLinks
           className="ml-8 hidden items-center gap-6 md:flex"
-          linkClassName="text-sm font-medium text-foreground/80 hover:text-primary"
+          linkClassName="text-sm font-semibold text-foreground/80 hover:text-primary"
         />
         <div className="ml-auto flex items-center gap-2">
-          <Link href="/report" className={cn(buttonVariants({ size: "lg" }), "hidden h-9 px-4 font-semibold sm:inline-flex")}>
-            <PlusIcon /> Report Incident
+          <Link href="/report" className={cn(buttonVariants({ size: "lg" }), "hidden h-10 bg-lantern px-4 font-bold text-foreground hover:bg-lantern/90 sm:inline-flex")}>
+            <PlusIcon /> Report
           </Link>
           <UserMenu />
         </div>

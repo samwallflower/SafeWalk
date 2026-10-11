@@ -1,45 +1,35 @@
-import { Eyebrow } from "./Eyebrow";
-
 const STEPS = [
   {
-    title: "Pick where you are going",
-    text: "Search a start and a destination anywhere, or use your current location.",
+    title: "See the street",
+    text: "Every report from people nearby sits on one map, each as its own dot. Tap one to see what happened and how recently.",
   },
   {
-    title: "Compare the routes",
-    text: "See each walking option side by side, ranked by how safe it is, not just how short.",
+    title: "Choose your way",
+    text: "Plan a route and compare options by distance, time and how many recent reports they pass.",
   },
   {
-    title: "Walk, and help others",
-    text: "Report what you notice and vote on reports so the map stays accurate for everyone.",
+    title: "Walk with a buddy",
+    text: "Start a walk in the mobile app and SafeWalk follows along. Stop for too long or leave the route and it checks in, then alerts your contacts.",
   },
 ] as const;
 
 export function HowItWorks() {
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-20 md:px-8">
-      <div className="mb-12 max-w-2xl space-y-4">
-        <Eyebrow>02 / How it works</Eyebrow>
-        <h2 className="text-4xl font-light tracking-tight">
-          Three steps from &quot;is this street okay?&quot; to a walk you feel
-          good about.
-        </h2>
-      </div>
-      <ol className="grid border-y md:grid-cols-3">
+    <section className="mx-auto w-full max-w-7xl space-y-8 px-4 py-16 md:px-6">
+      <h2 className="max-w-2xl text-4xl leading-[1.05] font-extrabold md:text-5xl">
+        Three steps from &quot;hmm&quot; to &quot;home safe&quot;.
+      </h2>
+      <ol className="grid gap-5 md:grid-cols-3">
         {STEPS.map((step, i) => (
           <li
             key={step.title}
-            className="space-y-3 border-b py-8 last:border-b-0 md:border-r md:border-b-0 md:px-8 md:first:pl-0 md:last:border-r-0 md:last:pr-0"
+            className="space-y-3 rounded-xl border border-[#e8a317] bg-card p-7"
           >
-            <p className="font-semibold text-xs tracking-[0.16em] text-primary">
-              {String(i + 1).padStart(2, "0")}
+            <p className="font-heading text-5xl leading-none font-extrabold text-[#e8a317]" aria-hidden="true">
+              {i + 1}
             </p>
-            <h3 className="text-xl font-semibold tracking-tight">
-              {step.title}
-            </h3>
-            <p className="text-sm leading-6 text-muted-foreground">
-              {step.text}
-            </p>
+            <h3 className="text-xl font-bold">{step.title}</h3>
+            <p className="leading-7 text-muted-foreground">{step.text}</p>
           </li>
         ))}
       </ol>
