@@ -3,7 +3,7 @@
 Run on a real phone with the backend up. Use throwaway accounts and contacts; emails to contacts are real.
 
 ## Install and start
-- [✅] Home-screen icon is the blue pin and the label reads "SafeWalk".
+- [✅] Home-screen icon is the green pin and the label reads "SafeWalk".
 - [✅] Launch shows the blue screen with the pin, then the app.
 
 ## Account
@@ -11,17 +11,17 @@ Run on a real phone with the backend up. Use throwaway accounts and contacts; em
 - [✅] Kill the app and reopen: still signed in. Sign out from Settings: back at login.
 
 ## Map and reports
-- [] Map shows your position and nearby dots; every dot is its own dot.
+- [✅] Map shows your position and nearby dots; every dot is its own dot.
 - [✅] Tap a dot: sheet opens; upvote/downvote update at once and survive a refresh.
 - [✅ ] Report: pick a spot, category, description; it appears on the map.
 
 ## Walk
 - [✅] Plan a route; Start is refused when more than 100 m from it.
 - [✅] Walking updates progress; leaving the phone still raises the idle prompt, "I'm OK" clears it.
-- [ ] Leave the route: off-route banner shows. Arrive: summary shows time taken.
+- [✅] Leave the route: off-route banner shows. Arrive: summary shows time taken.
 - [✅] Hold SOS for 1 s: emergency screen, call button opens the dialer only.
 - [✅] Switch to another app mid-walk: a notification arrives for an alert (Settings shows if notifications are off).
-- [ ] Lose the connection (airplane mode 10 s): banner shows, then recovers.
+- [✅] Lose the connection (airplane mode 10 s): banner shows, then recovers.
 
 ## My Safety
 - [✅] Stat tiles are the same height in each row, including with five contacts.
