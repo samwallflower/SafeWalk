@@ -7,7 +7,7 @@ import type { StatsWindow } from "../lib/admin-stats";
 
 const OPTIONS: { value: StatsWindow; label: string }[] = [
   { value: "24h", label: "24h" },
-  { value: "7d", label: "Past 7 days" },
+  { value: "7d", label: "7 days" },
   { value: "30d", label: "30 days" },
 ];
 
