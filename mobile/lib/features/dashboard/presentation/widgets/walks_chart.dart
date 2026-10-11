@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/colors.dart';
 import '../../domain/dashboard_stats.dart';
 
 /// Walks per day, as bars. Days with none are empty bars, so the rhythm of your walking is easy to see.
@@ -16,6 +17,8 @@ class WalksChart extends StatelessWidget {
     final theme = Theme.of(context);
     final top = days.fold<int>(0, (m, d) => d.count > m ? d.count : m);
     final maxY = (top < 2 ? 2 : top + 1).toDouble();
+    // the busiest day is picked out in lantern yellow (the latest one if several tie)
+    final busiest = top == 0 ? -1 : days.lastIndexWhere((d) => d.count == top);
 
     return Semantics(
       label:
@@ -63,10 +66,12 @@ class WalksChart extends StatelessWidget {
                     BarChartRodData(
                       toY: days[i].count == 0 ? 0.06 : days[i].count.toDouble(),
                       width: 24,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(8),
                       color: days[i].count == 0
-                          ? theme.colorScheme.outline
-                          : theme.colorScheme.primary,
+                          ? AppColors.border
+                          : i == busiest
+                          ? AppColors.lantern
+                          : AppColors.leaf,
                     ),
                   ],
                 ),

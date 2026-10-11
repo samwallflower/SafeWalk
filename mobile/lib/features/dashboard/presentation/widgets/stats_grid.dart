@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/format/format.dart';
-import '../../../contacts/domain/contact_rules.dart';
 import '../../../contacts/presentation/state/contacts_controller.dart';
 import '../../../my_reports/data/my_reports_api.dart';
 import '../../data/walk_stats_providers.dart';
@@ -34,7 +33,7 @@ class StatsGrid extends ConsumerWidget {
       StatTile(label: 'Reports', value: reports.whenData((n) => '$n')),
       StatTile(
         label: 'Contacts',
-        value: contacts.whenData((c) => '${c.length} of $maxEmergencyContacts'),
+        value: contacts.whenData((c) => '${c.length}'),
       ),
     ];
 
