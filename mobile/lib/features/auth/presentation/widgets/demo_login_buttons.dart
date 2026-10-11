@@ -24,12 +24,6 @@ List<DemoAccount> configuredDemoAccounts() {
         email: Env.demoUserEmail,
         password: Env.demoUserPassword,
       ),
-    if (Env.demoAdminEmail.isNotEmpty)
-      const DemoAccount(
-        label: 'Use demo admin',
-        email: Env.demoAdminEmail,
-        password: Env.demoAdminPassword,
-      ),
   ];
 }
 

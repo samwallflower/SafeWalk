@@ -4,8 +4,6 @@
   "MAPBOX_TOKEN": "",
   "DEMO_LOGIN_ENABLED": "false",
   "DEMO_USER_EMAIL": "",
-  "DEMO_USER_PASSWORD": "",
-  "DEMO_ADMIN_EMAIL": "",
-  "DEMO_ADMIN_PASSWORD": ""
+  "DEMO_USER_PASSWORD": ""
 }
 

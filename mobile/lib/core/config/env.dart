@@ -12,10 +12,6 @@ abstract final class Env {
   static const demoLoginEnabled = bool.fromEnvironment('DEMO_LOGIN_ENABLED');
   static const demoUserEmail = String.fromEnvironment('DEMO_USER_EMAIL');
   static const demoUserPassword = String.fromEnvironment('DEMO_USER_PASSWORD');
-  static const demoAdminEmail = String.fromEnvironment('DEMO_ADMIN_EMAIL');
-  static const demoAdminPassword = String.fromEnvironment(
-    'DEMO_ADMIN_PASSWORD',
-  );
 
   static String get apiBaseUrl => '$baseUrl$apiPrefix';
 }
