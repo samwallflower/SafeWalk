@@ -8,6 +8,7 @@ import '../../../core/widgets/section_header.dart';
 import '../../emergency/data/dialer.dart';
 import '../domain/contact_rules.dart';
 import '../domain/emergency_contact.dart';
+import 'contact_details_sheet.dart';
 import 'contact_form_sheet.dart';
 import 'state/contacts_controller.dart';
 
@@ -62,24 +63,13 @@ class ContactsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final contacts = ref.watch(contactsProvider);
-    final theme = Theme.of(context);
     final count = contacts.value?.length ?? 0;
     final full = count >= maxEmergencyContacts;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(
-          'Emergency contacts',
-          trailing: contacts.hasValue
-              ? Text(
-                  '$count of $maxEmergencyContacts',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                )
-              : null,
-        ),
+        SectionHeader('Emergency contacts'),
         const SizedBox(height: 8),
         Card(
           child: contacts.when(
@@ -104,6 +94,13 @@ class ContactsSection extends ConsumerWidget {
                 for (final contact in items) ...[
                   _ContactTile(
                     contact: contact,
+                    onOpen: () => showContactDetailsSheet(
+                      context,
+                      contact: contact,
+                      onEdit: () =>
+                          showContactFormSheet(context, contact: contact),
+                      onDelete: () => _delete(context, ref, contact),
+                    ),
                     onEdit: () =>
                         showContactFormSheet(context, contact: contact),
                     onDelete: () => _delete(context, ref, contact),
@@ -132,11 +129,13 @@ class ContactsSection extends ConsumerWidget {
 class _ContactTile extends ConsumerWidget {
   const _ContactTile({
     required this.contact,
+    required this.onOpen,
     required this.onEdit,
     required this.onDelete,
   });
 
   final EmergencyContact contact;
+  final VoidCallback onOpen;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -145,6 +144,7 @@ class _ContactTile extends ConsumerWidget {
     final theme = Theme.of(context);
     final phone = contact.phone;
     return ListTile(
+      onTap: onOpen,
       leading: CircleAvatar(
         backgroundColor: theme.colorScheme.primaryContainer,
         foregroundColor: theme.colorScheme.primary,

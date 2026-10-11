@@ -100,9 +100,7 @@ Future<void> _pump(
 
 void main() {
   group('ContactsSection', () {
-    testWidgets('lists contacts with how many of five are used', (
-      tester,
-    ) async {
+    testWidgets('lists the contacts, without a count', (tester) async {
       await _pump(
         tester,
         const ContactsSection(),
@@ -110,8 +108,23 @@ void main() {
       );
       expect(find.text('Mum'), findsOneWidget);
       expect(find.text('Dad'), findsOneWidget);
-      expect(find.text('2 of 5'), findsOneWidget);
+      expect(find.text('2 of 5'), findsNothing);
       expect(find.text('Add emergency contact'), findsOneWidget);
+    });
+
+    testWidgets('tapping a contact shows their details', (tester) async {
+      await _pump(
+        tester,
+        const ContactsSection(),
+        api: _FakeContactsApi([_c(1, 'Mum', phone: '+3630')]),
+      );
+      await tester.tap(find.text('Mum'));
+      await tester.pumpAndSettle();
+      expect(find.text('Emergency contact'), findsOneWidget);
+      expect(find.text('Mum@x.com'), findsOneWidget);
+      expect(find.text('Call Mum'), findsOneWidget);
+      expect(find.text('Edit'), findsOneWidget);
+      expect(find.text('Remove'), findsOneWidget);
     });
 
     testWidgets('an empty list invites you to add someone', (tester) async {
