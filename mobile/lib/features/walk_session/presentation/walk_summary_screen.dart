@@ -51,7 +51,7 @@ class WalkSummaryScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Icon(
-                    Icons.check_circle,
+                    Icons.check_circle_outline,
                     size: 56,
                     color: AppColors.success,
                   ),

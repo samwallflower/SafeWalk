@@ -10,6 +10,9 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../core/config/env.dart';
 import '../../../core/format/format.dart';
 import '../../../core/widgets/error_state.dart';
+import '../../../core/widgets/app_logo.dart';
+import '../../../core/theme/theme.dart' show cardRadius, sheetRadius;
+import '../../places/data/geocode_api.dart';
 import '../../../core/widgets/inline_notice.dart';
 import '../../map/domain/map_config.dart';
 import '../../map/presentation/widgets/map_layers.dart';
@@ -17,6 +20,7 @@ import '../../routing/presentation/widgets/route_map_layers.dart';
 import '../../../core/location/location_provider.dart';
 import '../../../core/notifications/alert_notifier.dart';
 import '../../../core/widgets/notifications_off_banner.dart';
+import '../../../core/theme/colors.dart';
 import '../../emergency/data/authority_cache.dart';
 import '../../emergency/data/best_emergency_number.dart';
 import '../../emergency/data/dialer.dart';
@@ -117,7 +121,7 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
       builder: (context) => AlertDialog(
         icon: const Icon(
           Icons.error_outline,
-          color: Color(0xFFC4161C),
+          color: AppColors.destructive,
           size: 36,
         ),
         title: const Text('SOS was not sent'),
@@ -159,7 +163,8 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFC4161C),
+              backgroundColor: AppColors.alarm,
+              foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Send SOS'),
@@ -252,47 +257,51 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Card(
-                    elevation: 4,
-                    shadowColor: Colors.black26,
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x2417301A),
+                            blurRadius: 14,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
                             width: 10,
                             height: 10,
                             decoration: const BoxDecoration(
-                              color: Color(0xFF0A6B32),
+                              color: AppColors.leaf,
                               shape: BoxShape.circle,
+                              border: Border.fromBorderSide(
+                                BorderSide(color: AppColors.primary, width: 2),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Walking now',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Walk in progress',
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                Text(
-                                  left == null
-                                      ? 'Finding your position...'
-                                      : '${formatDistance(left)} to go',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                           Text(
                             formatClock(elapsed),
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: AppColors.mutedForeground,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
                         ],
@@ -331,7 +340,7 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
           if (!_follow && position != null)
             Positioned(
               right: 12,
-              bottom: 180,
+              bottom: 340,
               child: FloatingActionButton.small(
                 heroTag: 'recenter',
                 tooltip: 'Follow my position',
@@ -345,35 +354,21 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
               ),
             ),
           Positioned(
-            left: 12,
-            right: 12,
-            bottom: 12,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SosButton(
-                  busy: emergency.triggering,
-                  onTriggered: _sendSos,
-                  onConfirmRequested: _confirmSos,
-                ),
-                const SizedBox(height: 10),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.surface,
-                    foregroundColor: theme.colorScheme.error,
-                  ),
-                  onPressed: _ending ? null : _confirmEnd,
-                  icon: _ending
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        )
-                      : const Icon(Icons.stop_circle_outlined),
-                  label: Text(_ending ? 'Ending...' : 'End walk'),
-                ),
-              ],
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _WalkSheet(
+              destination: destination,
+              metersLeft: left,
+              totalMeters: route?.route.actualDistanceMeters,
+              offRoute: safety.offRoute,
+              sos: SosButton(
+                busy: emergency.triggering,
+                onTriggered: _sendSos,
+                onConfirmRequested: _confirmSos,
+              ),
+              ending: _ending,
+              onEnd: _ending ? null : _confirmEnd,
             ),
           ),
           if (safety.idlePrompt != null && !walk.emergencyActive)
@@ -389,6 +384,214 @@ class _ActiveWalkScreenState extends ConsumerState<ActiveWalkScreen> {
           if (walk.emergencyActive)
             const Positioned.fill(child: EmergencyOverlay()),
         ],
+      ),
+    );
+  }
+}
+
+/// The panel under the map: where you are going, how far is left, the buddy note and the two big controls.
+class _WalkSheet extends ConsumerWidget {
+  const _WalkSheet({
+    required this.destination,
+    required this.metersLeft,
+    required this.totalMeters,
+    required this.offRoute,
+    required this.sos,
+    required this.ending,
+    required this.onEnd,
+  });
+
+  final LatLng? destination;
+  final double? metersLeft;
+  final double? totalMeters;
+  final bool offRoute;
+  final Widget sos;
+  final bool ending;
+  final VoidCallback? onEnd;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final street = destination == null
+        ? null
+        : ref.watch(
+            streetNameProvider((
+              lat: double.parse(destination!.latitude.toStringAsFixed(5)),
+              lng: double.parse(destination!.longitude.toStringAsFixed(5)),
+            )),
+          );
+    final left = metersLeft;
+    final progress = (left == null || totalMeters == null || totalMeters! <= 0)
+        ? 0.0
+        : (1 - left / totalMeters!).clamp(0.0, 1.0);
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(sheetRadius)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x1F17301A),
+            blurRadius: 30,
+            offset: Offset(0, -8),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'To',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: AppColors.mutedForeground,
+                          ),
+                        ),
+                        Text(
+                          street?.value ?? 'Your destination',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            height: 1.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        left == null
+                            ? '...'
+                            : '${estimateWalkingMinutes(left)} min',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        left == null
+                            ? 'Finding you'
+                            : '${formatDistance(left)} left',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  height: 10,
+                  child: Stack(
+                    children: [
+                      const Positioned.fill(
+                        child: ColoredBox(color: AppColors.infoSoft),
+                      ),
+                      FractionallySizedBox(
+                        widthFactor: progress,
+                        child: const ColoredBox(color: AppColors.primary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.warningSoft,
+                  borderRadius: BorderRadius.circular(cardRadius),
+                ),
+                child: Row(
+                  children: [
+                    const LanternPin(size: 30),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SafeWalk is walking with you',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            offRoute
+                                ? 'Off route. Head back to your route.'
+                                : 'On route. We will check in if you stop.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.warning,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(child: sos),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 64,
+                      child: OutlinedButton(
+                        onPressed: onEnd,
+                        child: ending
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text(
+                                'End walk',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Hold the SOS button for one second to alert your contacts.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.mutedForeground,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
