@@ -13,6 +13,7 @@ import { useContacts } from "../hooks/useContacts";
 import { useDeleteContact } from "../hooks/useContactMutations";
 import type { EmergencyContact } from "../types";
 import { ContactDialog } from "./ContactDialog";
+import { ContactDrawer } from "./ContactDrawer";
 import { ContactItem } from "./ContactItem";
 
 type Editing = { mode: "closed" } | { mode: "add" } | { mode: "edit"; contact: EmergencyContact };
@@ -23,6 +24,7 @@ export function ContactsManager() {
   const remove = useDeleteContact();
   const [editing, setEditing] = useState<Editing>({ mode: "closed" });
   const [deleting, setDeleting] = useState<EmergencyContact | null>(null);
+  const [viewing, setViewing] = useState<EmergencyContact | null>(null);
 
   return (
     <div className="space-y-4">
@@ -44,11 +46,23 @@ export function ContactsManager() {
       ) : (
         <ul className="space-y-3">
           {contacts.data.map((contact) => (
-            <ContactItem key={contact.id} contact={contact} onEdit={(c) => setEditing({ mode: "edit", contact: c })} onDelete={setDeleting} />
+            <ContactItem key={contact.id} contact={contact} onOpen={setViewing} onEdit={(c) => setEditing({ mode: "edit", contact: c })} onDelete={setDeleting} />
           ))}
         </ul>
       )}
 
+      <ContactDrawer
+        contact={viewing}
+        onOpenChange={(open) => !open && setViewing(null)}
+        onEdit={(c) => {
+          setViewing(null);
+          setEditing({ mode: "edit", contact: c });
+        }}
+        onDelete={(c) => {
+          setViewing(null);
+          setDeleting(c);
+        }}
+      />
       <ContactDialog
         open={editing.mode !== "closed"}
         onOpenChange={(open) => !open && setEditing({ mode: "closed" })}
