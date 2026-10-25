@@ -3,15 +3,15 @@ import { expect, test } from "@playwright/test";
 test.describe("home page", () => {
   test("renders the hero and a full-width feature section", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("confidence");
-    await expect(page.getByRole("link", { name: "Explore the map" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("someone has your back");
+    await expect(page.getByRole("link", { name: "Open the map" })).toBeVisible();
 
     // Regression: the feature cards once collapsed into narrow slivers.
-    const section = page.locator("section", { has: page.getByRole("heading", { name: "Built for people on foot" }) });
+    const section = page.locator("section", { has: page.getByRole("heading", { name: "Quiet by default. Loud when it matters." }) });
     const sectionBox = await section.boundingBox();
     const viewport = page.viewportSize();
     expect(sectionBox?.width ?? 0).toBeGreaterThan((viewport?.width ?? 0) * 0.9);
-    for (const title of ["Live safety map", "Safer routes", "Community powered", "Private by default"]) {
+    for (const title of ["Idle check-in", "Off-route notice", "Hold-to-send SOS", "Local numbers"]) {
       const box = await page.getByRole("heading", { name: title }).boundingBox();
       expect(box?.width ?? 0).toBeGreaterThan(100);
     }
